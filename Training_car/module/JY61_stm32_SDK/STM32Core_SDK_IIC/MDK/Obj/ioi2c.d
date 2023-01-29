@@ -1,0 +1,13 @@
+.\obj\ioi2c.o: ..\Source\Drive\IOI2C.c
+.\obj\ioi2c.o: ..\Source\Drive\IOI2C.h
+.\obj\ioi2c.o: ..\Source\STM32F10xLib\M3\stm32f10x.h
+.\obj\ioi2c.o: ..\Source\STM32F10xLib\M3\core_cm3.h
+.\obj\ioi2c.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdint.h
+.\obj\ioi2c.o: ..\Source\STM32F10xLib\M3\core_cmInstr.h
+.\obj\ioi2c.o: D:\keil5\ARM\CMSIS\5.7.0\CMSIS\Core\Include\cmsis_armcc.h
+.\obj\ioi2c.o: ..\Source\STM32F10xLib\M3\core_cmFunc.h
+.\obj\ioi2c.o: ..\Source\STM32F10xLib\M3\system_stm32f10x.h
+.\obj\ioi2c.o: ..\Source\STM32F10xLib\M3\stm32f10x_conf.h
+.\obj\ioi2c.o: ..\Source\Drive\delay.h
+.\obj\ioi2c.o: ..\Source\STM32F10xLib\inc\stm32f10x_gpio.h
+.\obj\ioi2c.o: ..\Source\STM32F10xLib\inc\stm32f10x_rcc.h
