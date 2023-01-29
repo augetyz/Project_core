@@ -1,0 +1,38 @@
+第一代小车：
+定时器采样使用：
+TIM3_CH1 PB4（电机A）
+TIM3_CH2 PB5
+TIM4_CH1 PB6（电机B）
+TIM4_CH2 PB7
+pwm控制使用：
+TIM1_CH1 PA8（电机A）
+TIM2_CH2 PB3（电机B）
+iic读取mpu6050使用：
+iic2_scl     PB10
+iic2_sda    PB11
+蓝牙串口通信使用：
+TXD_PA9
+RXD_PA10
+电机正反转控制:
+motorA-PB12_PB13（电机A）
+motorB-PB14_PB15（电机B）
+
+第二代：
+定时器采样使用：
+TIM3_CH1 PB4（电机A）
+TIM3_CH2 PB5
+TIM2_CH1 PA0（电机B）
+TIM2_CH2 PA1
+pwm控制使用：
+TIM1_CH1 PA8（电机A）
+TIM1_CH4 PA11（电机B）
+iic读取mpu6050使用：
+iic2_scl     PB6
+iic2_sda    PB7
+蓝牙串口通信使用：
+TXD_PA9
+RXD_PA10
+电机正反转控制:
+motorA-PB12_PB13（电机A）
+motorB-PB14_PB15（电机B）
+
