@@ -48,6 +48,7 @@ char task_test_text[]="简单的测试任务";
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define Led_Toggle GPIOC->ODR^=GPIO_PIN_13
+#define IMU_speed 80
 #define task_test 0X00
 /* USER CODE END PD */
 
@@ -58,8 +59,10 @@ extern UART_HandleTypeDef huart2;
 
 extern char s_cDataUpdate, s_cCmd;
 
+uint8_t OS_status=0;
 uint8_t debug_date[400]={0};
-uint8_t IMU_date[100]={0};
+uint8_t IMU_date[IMU_speed]={0};
+
 extern int f_sprintf(char *out, const char *format, ...);
 
 Car_status car_status;
@@ -152,11 +155,13 @@ void MX_FREERTOS_Init(void) {
   myTask_IMUHandle = osThreadCreate(osThread(myTask_IMU), NULL);
 
   /* definition and creation of myTask_debug */
-  osThreadDef(myTask_debug, deubg_Task, osPriorityLow, 0, 1124);
+  osThreadDef(myTask_debug, deubg_Task, osPriorityLow, 0, 128);
   myTask_debugHandle = osThreadCreate(osThread(myTask_debug), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
+
+    OS_status=1;
   /* USER CODE END RTOS_THREADS */
 
 }
@@ -224,8 +229,8 @@ void led_Task(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-      
-    osDelay(1);
+      GPIOC->ODR^=GPIO_PIN_12;
+    osDelay(100);
   }
   /* USER CODE END led_Task */
 }
@@ -241,9 +246,28 @@ void IMU_Task(void const * argument)
 {
   /* USER CODE BEGIN IMU_Task */
   /* Infinite loop */
+    BaseType_t xReturn = pdPASS;/* 定义一个创建信息返回值，默认为pdPASS */
+    int i;
   for(;;)
   {
-    osDelay(1);
+      //获取二值信号量 xSemaphore,没获取到则一直等待
+	xReturn = xSemaphoreTake(IMUdate_RX_Sem_Handle,/* 二值信号量句柄 */
+                              portMAX_DELAY); /* 等待时间 */
+
+    for(i=0;i<IMU_speed;i++)
+      {
+          WitSerialDataIn(IMU_date[i]);
+      }
+    if(s_cDataUpdate)
+		{
+			for(i = 0; i < 3; i++)
+			{				
+				car_status.IMU[i] = sReg[Roll+i] / 32768.0f * 180.0f;                
+			}
+            
+		}
+    HAL_UART_Receive_DMA(&huart2,IMU_date,IMU_speed);
+    
   }
   /* USER CODE END IMU_Task */
 }

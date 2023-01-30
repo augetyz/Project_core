@@ -47,6 +47,7 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 extern SemaphoreHandle_t IMUdate_RX_Sem_Handle ;
+extern uint8_t OS_status;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -175,7 +176,14 @@ void DebugMon_Handler(void)
 void DMA1_Stream5_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Stream5_IRQn 0 */
-    
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    if(OS_status)     //OS初始化OK同步信号
+    {        
+        /* 发送同步信号 */
+        xSemaphoreGiveFromISR(IMUdate_RX_Sem_Handle, &xHigherPriorityTaskWoken);
+        /* 如果 xHigherPriorityTaskWoken = pdTRUE，那么退出中断后切到当前最高优先级任务执行 */
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
   /* USER CODE END DMA1_Stream5_IRQn 0 */
   HAL_DMA_IRQHandler(&hdma_usart2_rx);
   /* USER CODE BEGIN DMA1_Stream5_IRQn 1 */
@@ -203,18 +211,8 @@ void USART1_IRQHandler(void)
 void USART2_IRQHandler(void)
 {
   /* USER CODE BEGIN USART2_IRQn 0 */
-    uint16_t rx_len;
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    
-//      HAL_UART_DMAStop(&huart2);               
-//      rx_len = 100 - __HAL_DMA_GET_COUNTER(&hdma_usart2_rx); //计算出数据长度
-    printf("%d\n",rx_len);
-    /* 发送同步信号 */
-//    xSemaphoreGiveFromISR(IMUdate_RX_Sem_Handle, &xHigherPriorityTaskWoken);
-//    /* 如果 xHigherPriorityTaskWoken = pdTRUE，那么退出中断后切到当前最高优先级任务执行 */
-//    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-   
 
+  
   /* USER CODE END USART2_IRQn 0 */
   HAL_UART_IRQHandler(&huart2);
   /* USER CODE BEGIN USART2_IRQn 1 */

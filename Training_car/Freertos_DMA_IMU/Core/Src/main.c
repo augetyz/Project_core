@@ -94,11 +94,11 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
     printf("BSP初始化成功!\n\n");
-//    WitInit(WIT_PROTOCOL_NORMAL, 0x50);
-//	WitSerialWriteRegister(SensorUartSend);
-//	WitRegisterCallBack(SensorDataUpdata);
-//	WitDelayMsRegister(Delayms);
-//    HAL_UART_Receive_DMA(&huart2,IMU_date,100);
+    WitInit(WIT_PROTOCOL_NORMAL, 0x50);
+	WitSerialWriteRegister(SensorUartSend);
+	WitRegisterCallBack(SensorDataUpdata);
+	WitDelayMsRegister(Delayms);
+    HAL_UART_Receive_DMA(&huart2,IMU_date,100);
     
   /* USER CODE END 2 */
 
