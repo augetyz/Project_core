@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;          ../Drivers/STM32F4xx_HAL_Driver/Inc;          ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;          ../Middlewares/Third_Party/FreeRTOS/Source/include;          ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;          ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;          ../Drivers/CMSIS/Device/ST/STM32F4xx/Include;          ../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../Core/Inc;              ../Drivers/STM32F4xx_HAL_Driver/Inc;              ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;              ../Middlewares/Third_Party/FreeRTOS/Source/include;              ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;              ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;              ../Drivers/CMSIS/Device/ST/STM32F4xx/Include;              ../Drivers/CMSIS/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -404,9 +404,24 @@
               <FilePath>..\Core\Src\JY61.c</FilePath>
             </File>
             <File>
-              <FileName>printf-stdarg.c</FileName>
+              <FileName>callback_use.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Core\Src\printf-stdarg.c</FilePath>
+              <FilePath>..\Core\Src\callback_use.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor_ctrl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\motor_ctrl.c</FilePath>
+            </File>
+            <File>
+              <FileName>pid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\pid.c</FilePath>
+            </File>
+            <File>
+              <FileName>servo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\servo.c</FilePath>
             </File>
             <File>
               <FileName>main.c</FileName>

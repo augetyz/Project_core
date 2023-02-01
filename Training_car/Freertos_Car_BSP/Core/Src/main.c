@@ -5,15 +5,9 @@
   * @brief          : Main program body
   ******************************************************************************
   * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2023 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
-  *
+
+
+
   ******************************************************************************
   */
 /* USER CODE END Header */
@@ -28,6 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "JY61.h"
+#include "motor_ctrl.h"
+#include "servo.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,6 +44,7 @@
 
 /* USER CODE BEGIN PV */
 extern uint8_t IMU_date[100];
+extern Car_status car_status;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -110,11 +107,18 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
+    motor_tim_config();
+      
+    servo_config();
+    
+    HAL_TIM_Base_Start_IT(&htim6);
+    
     printf("BSP初始化成功!\n\n");
     WitInit(WIT_PROTOCOL_NORMAL, 0x50);
 	WitSerialWriteRegister(SensorUartSend);
 	WitRegisterCallBack(SensorDataUpdata);
 	WitDelayMsRegister(Delayms);
+    
     HAL_UART_Receive_DMA(&huart2,IMU_date,100);
     
   /* USER CODE END 2 */
@@ -201,7 +205,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
+    if(htim->Instance == TIM6){
+        speed_get();
 
+  }
   /* USER CODE END Callback 1 */
 }
 

@@ -54,3 +54,5 @@ freertos_dma_imu\main.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdio.h
 freertos_dma_imu\main.o: D:\keil5\ARM\ARMCC\Bin\..\include\string.h
 freertos_dma_imu\main.o: ../Core/Inc/REG.h
 freertos_dma_imu\main.o: ../Core/Inc/soft_user.h
+freertos_dma_imu\main.o: ../Core/Inc/motor_ctrl.h
+freertos_dma_imu\main.o: ../Core/Inc/servo.h
