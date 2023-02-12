@@ -217,7 +217,7 @@ void StartDefaultTask(void const * argument)
   {
     Led_Toggle;
 
-    osDelay(1000);
+    osDelay(100);
   }
   /* USER CODE END StartDefaultTask */
 }

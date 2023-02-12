@@ -108,7 +108,14 @@ int main(void)
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
     motor_tim_config();
-      
+//    Motor_ctrl(Motor1|Motor2|Motor3|Motor4,Mode_gogo);
+    speed_ctrl(Motor1, 500);
+    speed_ctrl(Motor2, 500);
+    speed_ctrl(Motor3, 500);
+    speed_ctrl(Motor4, 500);
+    GPIOD->ODR|=0XAA00;
+    
+    
     servo_config();
     
     HAL_TIM_Base_Start_IT(&htim6);
