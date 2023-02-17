@@ -37,7 +37,7 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-typedef struct Car_status
+typedef struct
 {
   int Car_speed[4];
   int goal_speed[4];
@@ -45,7 +45,9 @@ typedef struct Car_status
   uint16_t ditance_x;
   uint16_t ditance_y;
   uint8_t task;
+  float kp[4],ki[4],kd[4];
 } Car_status;
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

@@ -34,6 +34,8 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
+#include "motor_ctrl.h"
+#include "pid.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -63,7 +65,12 @@ extern char s_cDataUpdate, s_cCmd; // MPU6050移植参数，不用管
 uint8_t OS_status = 0;             // 任务初始化标志位，为1则初始化OK，为0则还没有嘞
 uint8_t debug_date[600] = {0};     // debug数据缓存区，用于缓存需要用来上传的debug数据。
 uint8_t IMU_date[IMU_speed] = {0}; // MPU6050数据缓冲区、采用DMA+串口方式接收
-
+uint8_t usart1_RX_date[25];
+uint8_t usart2_RX_date[25];
+uint8_t usart3_RX_date[25];
+uint8_t uart4_RX_date[25];
+uint8_t uart5_RX_date[25];
+uint8_t usart6_RX_date[25];
 uint8_t biu; // 杂类标志位数据
 
 Car_status car_status; // 小车状态结构体初始化
@@ -338,21 +345,24 @@ void deubg_Task(void const *argument)
       break;
     }
 
-    sprintf((char *)debug_date, "车身位置:X:%dcm  Y:%dcm\n\
-                               \n车身状态: Pitch:%.2f   Roll:%.2f    Yaw:%.2f\n\
-                               \n           四轮转速:     目标转速:\
-                               \nMotor1:%d                %d\
-                               \nMotor2:%d                %d\
-                               \nMotor3:%d                %d\
-                               \nMotor4:%d                %d\n\
-                               \n当前任务: %s\n\n\n",
-            car_status.ditance_x, car_status.ditance_y, car_status.IMU[0], car_status.IMU[1], car_status.IMU[2],
-            car_status.Car_speed[0], car_status.goal_speed[0], car_status.Car_speed[1], car_status.goal_speed[1],
-            car_status.Car_speed[2], car_status.goal_speed[2], car_status.Car_speed[3], car_status.goal_speed[3], task_description);
-
-    //    HAL_UART_Transmit_DMA(&huart1, debug_date, strlen((char *)debug_date));
-
-    osDelay(1000);
+//    sprintf((char *)debug_date, "车身位置:X:%dcm  Y:%dcm\n\
+//                               \n车身状态: Pitch:%.2f   Roll:%.2f    Yaw:%.2f\n\
+//                               \n           四轮转速:     目标转速:\
+//                               \nMotor1:%d                %d\
+//                               \nMotor2:%d                %d\
+//                               \nMotor3:%d                %d\
+//                               \nMotor4:%d                %d\n\
+//                               \n当前任务: %d\n\n\n",
+//            car_status.ditance_x, car_status.ditance_y, car_status.IMU[0], car_status.IMU[1], car_status.IMU[2],
+//            car_status.Car_speed[0], car_status.goal_speed[0],car_status.Car_speed[1], car_status.goal_speed[1],
+//            car_status.Car_speed[2], car_status.goal_speed[2], car_status.Car_speed[3], car_status.goal_speed[3], car_status.task);
+    sprintf((char *)debug_date,"%d,%d,%2f,%2f,%2f,%d,%d,%d,%d,%d,%d,%d,%d\n",\
+        car_status.ditance_x, car_status.ditance_y, car_status.IMU[0], car_status.IMU[1], car_status.IMU[2],\
+        car_status.Car_speed[0], car_status.goal_speed[0],car_status.Car_speed[1], car_status.goal_speed[1],\
+        car_status.Car_speed[0], car_status.goal_speed[0],car_status.Car_speed[1], car_status.goal_speed[1]);
+    HAL_UART_Transmit_DMA(&huart1, debug_date, strlen((char *)debug_date));
+    
+    osDelay(100);
   }
   /* USER CODE END deubg_Task */
 }
@@ -388,7 +398,12 @@ void usart_Task(void const *argument)
   /* Infinite loop */
   for (;;)
   {
-
+    if(__HAL_DMA_GET_COUNTER(&hdma_usart1_rx)!=25)
+    {
+        
+        HAL_UART_DMAStop(&huart1);
+        HAL_UART_Receive_DMA(&huart1, usart1_RX_date, 25); 
+    }
     osDelay(1);
   }
   /* USER CODE END usart_Task */
@@ -444,7 +459,8 @@ void speed_Task(void const *argument)
   /* Infinite loop */
   for (;;)
   {
-    osDelay(1);
+
+    osDelay(10);
   }
   /* USER CODE END speed_Task */
 }
@@ -462,8 +478,8 @@ void pid_Task(void const *argument)
   /* Infinite loop */
   for (;;)
   {
-
-    osDelay(1);
+    pid_doing(&car_status);
+    osDelay(10);
   }
   /* USER CODE END pid_Task */
 }
@@ -481,6 +497,10 @@ void doing_Task(void const *argument)
   /* Infinite loop */
   for (;;)
   {
+      
+      
+      
+      
     osDelay(1);
   }
   /* USER CODE END doing_Task */

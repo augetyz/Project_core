@@ -55,3 +55,5 @@ freertos_dma_imu\freertos.o: ../Core/Inc/dma.h
 freertos_dma_imu\freertos.o: ../Core/Inc/tim.h
 freertos_dma_imu\freertos.o: ../Core/Inc/usart.h
 freertos_dma_imu\freertos.o: ../Core/Inc/gpio.h
+freertos_dma_imu\freertos.o: ../Core/Inc/motor_ctrl.h
+freertos_dma_imu\freertos.o: ../Core/Inc/pid.h

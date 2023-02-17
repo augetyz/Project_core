@@ -45,7 +45,7 @@
 /* USER CODE BEGIN PV */
 extern uint8_t IMU_date[100]; // MPU6050数据缓冲区、采用DMA+串口方式接收
 extern Car_status car_status; // 小车状态结构体描述
-
+extern uint8_t usart1_RX_date[25];
 extern servo_status Servo; // 舵机状态描述结构体
 /* USER CODE END PV */
 
@@ -113,12 +113,11 @@ int main(void)
 
   servo_config(); // 舵机PWM初始化
   // 电机速度控制为0
-  speed_ctrl(Motor1, 0);
-  speed_ctrl(Motor2, 0);
-  speed_ctrl(Motor3, 0);
-  speed_ctrl(Motor4, 0);
+  speed_ctrl(Motor1, 500);
+  speed_ctrl(Motor2, 500);
+  speed_ctrl(Motor3, 500);
+  speed_ctrl(Motor4, 500);
 
-  GPIOD->ODR |= 0XAA00;
 
   HAL_TIM_Base_Start_IT(&htim6); // 基础定时器初始化
 
@@ -131,7 +130,7 @@ int main(void)
 
   // 开启串口2接收陀螺仪的数据。
   HAL_UART_Receive_DMA(&huart2, IMU_date, 100);
-
+  HAL_UART_Receive_DMA(&huart1, usart1_RX_date, 25);  
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */

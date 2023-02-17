@@ -50,7 +50,7 @@ void speed_ctrl(uint8_t motor, int speed)
 }
 void speed_get(void)
 {
-     // 买的电机的编码器转一圈发出13440个脉冲。
+     // 买的电机的编码器参数，电机转一圈共发出13440个脉冲。
         
       car_status.Car_speed[0] = TIM2->CNT - 6720;
       TIM2->CNT = 6720;
