@@ -1,5 +1,5 @@
 #include "pid.h"
-
+#include <stdio.h>
 /*********************************************************/
 //参数整定找最佳，从小到大顺序查；
 //先是比例后积分，最后再把微分加；
@@ -25,9 +25,9 @@ extern Car_status car_status;
 void pid_doing(Car_status* car)
 {
     static int16_t speed_last[4],speed_last_last[4];
-    static int16_t speed_sum[4];
+    static int16_t speed_sum[4],speed[4];
     int16_t speed_dert[4];
-    uint16_t i=0;
+    uint8_t i=0;
     
     for(i=0;i<4;i++)
     {
@@ -39,10 +39,14 @@ void pid_doing(Car_status* car)
     }
     for(i=0;i<4;i++)//pid参数作用于输出值
     {
-        car->goal_speed[i] += car->kp[i] * speed_dert[i] + \
+        speed[i] += car->kp[i] * speed_dert[i] + \
                               car->ki[i] * speed_sum[i]  + \
                               car->kd[i] * (speed_dert[i]-speed_last[i]*2+speed_last_last[i]);
     }
     
+    speed_ctrl(Motor1, speed[0]);
+    speed_ctrl(Motor2, speed[1]);
+    speed_ctrl(Motor3, speed[2]);
+    speed_ctrl(Motor4, speed[3]);
 }
 

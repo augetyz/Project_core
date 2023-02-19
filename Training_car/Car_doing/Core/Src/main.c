@@ -113,12 +113,21 @@ int main(void)
 
   servo_config(); // 舵机PWM初始化
   // 电机速度控制为0
-  speed_ctrl(Motor1, 500);
-  speed_ctrl(Motor2, 500);
-  speed_ctrl(Motor3, 500);
-  speed_ctrl(Motor4, 500);
-
-
+    speed_ctrl(Motor1, 0);
+    speed_ctrl(Motor2, 0);
+    speed_ctrl(Motor3, 0);
+    speed_ctrl(Motor4, 0);
+    
+    car_status.goal_speed[0]=100;
+    car_status.goal_speed[1]=100;
+    car_status.goal_speed[2]=0;
+    car_status.goal_speed[3]=0;
+    
+    
+    car_status.kp[0]=0.55;car_status.kp[1]=0.5;car_status.kp[2]=0.46;car_status.kp[3]=0.46;
+    car_status.ki[0]=0.0005;car_status.ki[1]=0.0005;car_status.ki[2]=0.0003;car_status.ki[3]=0.0003;
+    car_status.kd[0]=0.02;car_status.kd[1]=0.01;car_status.kd[2]=0.01;car_status.kd[3]=0.01;
+    
   HAL_TIM_Base_Start_IT(&htim6); // 基础定时器初始化
 
   printf("BSP初始化成功!\n\n");
@@ -130,6 +139,7 @@ int main(void)
 
   // 开启串口2接收陀螺仪的数据。
   HAL_UART_Receive_DMA(&huart2, IMU_date, 100);
+  
   HAL_UART_Receive_DMA(&huart1, usart1_RX_date, 25);  
   /* USER CODE END 2 */
 
@@ -217,7 +227,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE BEGIN Callback 1 */
   if (htim->Instance == TIM6)
   {
-    speed_get();
+      
   }
   /* USER CODE END Callback 1 */
 }

@@ -22,29 +22,48 @@ void motor_tim_config(void)
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+    TIM2->CNT = 6720;
+    TIM3->CNT = 6720;
+    TIM4->CNT = 6720;
+    TIM5->CNT = 6720;
 }
 void Motor_ctrl(uint8_t motor, uint16_t status)
 {
-     GPIOD->ODR |= (status << motor); // 硬件连线理想的话，一句话就可以控制四个电机任意四个状态
+//     GPIOD->ODR |= (status << motor); // 硬件连线理想的话，一句话就可以控制四个电机任意四个状态
+    switch(motor)
+    {
+        case Motor1:                        
+            GPIOD->ODR|=status<<8;                                
+            break;
+        case Motor2:
+            GPIOD->ODR|=status<<10;   
+            break;
+        case Motor3:
+            GPIOD->ODR|=status<<12;   
+            break;
+        case Motor4:
+            GPIOD->ODR|=status<<14;   
+            break;
+    }
 }
 
 void speed_ctrl(uint8_t motor, int speed)
 {
      Motor_ctrl(motor,
-                speed > 0 ? Mode_gogo : (speed < 0 ? Mode_back : Mode_brake));
+                speed > 0 ? Mode_gogo : (speed < 0 ? Mode_back : Mode_free));
     switch (motor)
      {
      case Motor1:
-          TIM1->CCR1 = speed > 0 ? speed : -speed;
+          TIM1->CCR1 = speed >= 0 ? speed : -speed;
           break;
      case Motor2:
-          TIM1->CCR2 = speed > 0 ? speed : -speed;
+          TIM1->CCR2 = speed >= 0 ? speed : -speed;
           break;
      case Motor3:
-          TIM1->CCR3 = speed > 0 ? speed : -speed;
+          TIM1->CCR3 = speed >= 0 ? speed : -speed;
           break;
      case Motor4:
-          TIM1->CCR4 = speed > 0 ? speed : -speed;
+          TIM1->CCR4 = speed >= 0 ? speed : -speed;
           break;
      }
 }
@@ -52,13 +71,13 @@ void speed_get(void)
 {
      // 买的电机的编码器参数，电机转一圈共发出13440个脉冲。
         
-      car_status.Car_speed[0] = TIM2->CNT - 6720;
+      car_status.Car_speed[0] =  6720 - TIM2->CNT;
       TIM2->CNT = 6720;
 
       car_status.Car_speed[1] = TIM3->CNT - 6720;
       TIM3->CNT = 6720;
 
-      car_status.Car_speed[2] = TIM4->CNT - 6720;
+      car_status.Car_speed[2] =  6720 - TIM4->CNT;
       TIM4->CNT = 6720;
 
       car_status.Car_speed[3] = TIM5->CNT - 6720;

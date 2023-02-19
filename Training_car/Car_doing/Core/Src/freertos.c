@@ -179,7 +179,7 @@ void MX_FREERTOS_Init(void)
   myTask_IMUHandle = osThreadCreate(osThread(myTask_IMU), NULL);
 
   /* definition and creation of myTask_debug */
-  osThreadDef(myTask_debug, deubg_Task, osPriorityLow, 0, 512);
+  osThreadDef(myTask_debug, deubg_Task, osPriorityNormal, 0, 512);
   myTask_debugHandle = osThreadCreate(osThread(myTask_debug), NULL);
 
   /* definition and creation of myTask_motor */
@@ -203,7 +203,7 @@ void MX_FREERTOS_Init(void)
   myTask_speedHandle = osThreadCreate(osThread(myTask_speed), NULL);
 
   /* definition and creation of myTask_pid */
-  osThreadDef(myTask_pid, pid_Task, osPriorityHigh, 0, 256);
+  osThreadDef(myTask_pid, pid_Task, osPriorityHigh, 0, 512);
   myTask_pidHandle = osThreadCreate(osThread(myTask_pid), NULL);
 
   /* definition and creation of myTask_doing */
@@ -233,7 +233,7 @@ void StartDefaultTask(void const *argument)
   {
     Led_Toggle;
 
-    osDelay(100);
+    osDelay(50);
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -260,6 +260,9 @@ void key_Task(void const *argument)
           ;
         /*do something*/
         printf("°´¼ü´¥·¢\n");
+        car_status.goal_speed[1]=600;
+        car_status.goal_speed[2]=800;
+        car_status.goal_speed[3]=700;
       }
     }
     osDelay(1);
@@ -356,10 +359,10 @@ void deubg_Task(void const *argument)
 //            car_status.ditance_x, car_status.ditance_y, car_status.IMU[0], car_status.IMU[1], car_status.IMU[2],
 //            car_status.Car_speed[0], car_status.goal_speed[0],car_status.Car_speed[1], car_status.goal_speed[1],
 //            car_status.Car_speed[2], car_status.goal_speed[2], car_status.Car_speed[3], car_status.goal_speed[3], car_status.task);
-    sprintf((char *)debug_date,"%d,%d,%2f,%2f,%2f,%d,%d,%d,%d,%d,%d,%d,%d\n",\
+    sprintf((char *)debug_date,"%d,%d,%.2f,%.2f,%.2f,%d,%d,%d,%d,%d,%d,%d,%d\n",\
         car_status.ditance_x, car_status.ditance_y, car_status.IMU[0], car_status.IMU[1], car_status.IMU[2],\
         car_status.Car_speed[0], car_status.goal_speed[0],car_status.Car_speed[1], car_status.goal_speed[1],\
-        car_status.Car_speed[0], car_status.goal_speed[0],car_status.Car_speed[1], car_status.goal_speed[1]);
+        car_status.Car_speed[2], car_status.goal_speed[2],car_status.Car_speed[3], car_status.goal_speed[3]);
     HAL_UART_Transmit_DMA(&huart1, debug_date, strlen((char *)debug_date));
     
     osDelay(100);
@@ -398,13 +401,8 @@ void usart_Task(void const *argument)
   /* Infinite loop */
   for (;;)
   {
-    if(__HAL_DMA_GET_COUNTER(&hdma_usart1_rx)!=25)
-    {
-        
-        HAL_UART_DMAStop(&huart1);
-        HAL_UART_Receive_DMA(&huart1, usart1_RX_date, 25); 
-    }
-    osDelay(1);
+    
+    osDelay(100);
   }
   /* USER CODE END usart_Task */
 }
@@ -459,7 +457,7 @@ void speed_Task(void const *argument)
   /* Infinite loop */
   for (;;)
   {
-
+    pid_doing(&car_status);
     osDelay(10);
   }
   /* USER CODE END speed_Task */
@@ -478,7 +476,8 @@ void pid_Task(void const *argument)
   /* Infinite loop */
   for (;;)
   {
-    pid_doing(&car_status);
+    speed_get();      
+    
     osDelay(10);
   }
   /* USER CODE END pid_Task */
@@ -497,9 +496,7 @@ void doing_Task(void const *argument)
   /* Infinite loop */
   for (;;)
   {
-      
-      
-      
+   
       
     osDelay(1);
   }
