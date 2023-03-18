@@ -26,7 +26,7 @@ typedef struct{
    uint16_t time;
 }servo_status;
 
-uint8_t servo_date_deal(uint8_t *date);
+void servo_date_deal(uint8_t *date);
 void servo_ctrl(uint8_t servo,uint16_t value);
 void servo_config(void);    
 void servo_Ctrl(servo_status* servo);

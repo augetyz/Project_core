@@ -1,0 +1,8 @@
+{
+     "GBK2UTF8.autoDetect": false,
+     "files.encoding": "gbk",
+     "files.associations": {
+          "main.h": "c",
+          "soft_user.h": "c"
+     }
+}
