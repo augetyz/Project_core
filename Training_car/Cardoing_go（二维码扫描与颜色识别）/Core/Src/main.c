@@ -109,7 +109,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   motor_tim_config(); // 电机PWM初始化、编码器定时器初始化
 
-  servo_config(); // 舵机PWM初始化
+//  servo_config(); // 舵机PWM初始化
   // 电机速度控制为0
     speed_ctrl(Motor1, 0);
     speed_ctrl(Motor2, 0);

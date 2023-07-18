@@ -27,7 +27,21 @@ Project File Date:  03/07/2023
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 6 (build 750)', folder: 'D:\keil5\ARM\ARMCC\Bin'
 Build target 'Car_biubiu'
-"Freertos_DMA_IMU\Freertos_DMA_IMU.axf" - 0 Error(s), 0 Warning(s).
+compiling main.c...
+compiling freertos.c...
+../Core/Src/freertos.c(733): warning:  #177-D: variable "Servo"  was declared but never referenced
+      static servo_status Servo={800,550,2200,1900,1900,1500,2000,1};
+../Core/Src/freertos.c(737): warning:  #550-D: variable "servo_status"  was set but never used
+      uint8_t servo_status,V831_status=0,sign=0;
+../Core/Src/freertos.c(737): warning:  #177-D: variable "sign"  was declared but never referenced
+      uint8_t servo_status,V831_status=0,sign=0;
+../Core/Src/freertos.c(738): warning:  #550-D: variable "color"  was set but never used
+      int16_t color=0;//ÑÕÉ«Ë³Ðò´æ´¢
+../Core/Src/freertos.c: 4 warnings, 0 errors
+linking...
+Program Size: Code=23556 RO-data=1472 RW-data=348 ZI-data=20116  
+FromELF: creating hex file...
+"Freertos_DMA_IMU\Freertos_DMA_IMU.axf" - 0 Error(s), 4 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -51,7 +65,7 @@ Package Vendor: Keil
 
    * Component: ARM::CMSIS:CORE:5.4.0
       Include file:  CMSIS\Core\Include\tz_context.h
-Build Time Elapsed:  00:00:01
+Build Time Elapsed:  00:00:04
 </pre>
 </body>
 </html>

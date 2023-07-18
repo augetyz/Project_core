@@ -118,10 +118,10 @@ int main(void)
 
   printf("BSP初始化OK\n");
   // MPU6050初始化。
-  WitInit(WIT_PROTOCOL_NORMAL, 0x50);
-  WitSerialWriteRegister(SensorUartSend);
-  WitRegisterCallBack(SensorDataUpdata);
-  WitDelayMsRegister(Delayms);
+//  WitInit(WIT_PROTOCOL_NORMAL, 0x50);
+//  WitSerialWriteRegister(SensorUartSend);
+//  WitRegisterCallBack(SensorDataUpdata);
+//  WitDelayMsRegister(Delayms);
   uint8_t i=0;
   while((GPIOE->IDR & (1 << 1)) != 0)
   {
