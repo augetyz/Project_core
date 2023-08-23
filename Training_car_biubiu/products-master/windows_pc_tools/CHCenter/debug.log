@@ -1,7 +1,0 @@
-(2023-05-18 10:24:21) [I]: Old log file was removed.
-(2023-05-18 10:24:21) [I]: Ver: 1.2.7
-(2023-05-18 10:24:21) [I]: Build Time: May 16 2023 16:44:30
-(2023-05-18 10:24:21) [I]: ui-thread=25415704 started
-(2023-05-18 10:24:25) [I]: uart-thread=63449552 started
-(2023-05-18 10:24:25) [I]: uart-thread stopped.
-(2023-05-18 10:24:25) [W]: failed to open serial port.
