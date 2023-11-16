@@ -1,0 +1,15 @@
+car_biubiu\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/queue.c
+car_biubiu\queue.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdlib.h
+car_biubiu\queue.o: D:\keil5\ARM\ARMCC\Bin\..\include\string.h
+car_biubiu\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
+car_biubiu\queue.o: D:\keil5\ARM\ARMCC\Bin\..\include\stddef.h
+car_biubiu\queue.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdint.h
+car_biubiu\queue.o: ../Core/Inc/FreeRTOSConfig.h
+car_biubiu\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h
+car_biubiu\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h
+car_biubiu\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h
+car_biubiu\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F/portmacro.h
+car_biubiu\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h
+car_biubiu\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
+car_biubiu\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
+car_biubiu\queue.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h
