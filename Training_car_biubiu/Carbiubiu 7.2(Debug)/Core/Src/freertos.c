@@ -385,15 +385,15 @@ void key_Task(void const* argument)
                 /*do something*/
                 xSemaphoreGive(key_debug_Sem_Handle);
                 vTaskResume(myTask_debugHandle);
-                FSUS_DampingMode(servoUsart,1,100);
+                FSUS_DampingMode(servoUsart,1,600);
                 osDelay(100);
-                FSUS_DampingMode(servoUsart,2,100);
+                FSUS_DampingMode(servoUsart,2,600);
                 osDelay(100);
-                FSUS_DampingMode(servoUsart,3,100);
+                FSUS_DampingMode(servoUsart,3,600);
                 osDelay(100);
-                FSUS_DampingMode(servoUsart,4,100);
+                FSUS_DampingMode(servoUsart,4,600);
                 osDelay(100);
-                FSUS_DampingMode(servoUsart,6,100);
+                FSUS_DampingMode(servoUsart,6,600);
                 osDelay(100);
             }
         }

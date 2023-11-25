@@ -39,6 +39,7 @@
 #include "HI229.h"
 #include "fashion_star_uart_servo.h"
 #include "usb_user.h"
+#include "math.h"
 // #include "HI229.h"
 /* USER CODE END Includes */
 
@@ -63,14 +64,14 @@
 #define IMU_excursion   0.0f //-1.15f // 十字激光初始化陀螺仪后，对陀螺仪数据的偏移值
 
 
-#define color_circle_x_RM 0   // 面向暂存区， 前- 后 +
-#define color_circle_y_RM 0  // 面向粗加工区，暂存区为-，原料区为+
+#define color_circle_x_RM 7   
+#define color_circle_y_RM -18
 //四级复习： 粗加工  rough machining
 
-#define color_circle_x_TX 100   // 面向暂存区， 
-#define color_circle_y_TX -39  // 面向粗加工区，暂存区为-，原料区为+
+#define color_circle_x_TX 7   
+#define color_circle_y_TX -18
 //四级复习：暂存 temporary storage
-
+#define color_location_speed 40
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -549,149 +550,11 @@ void usb_Task(void const* argument)
 
     MX_USB_DEVICE_Init();
     uint8_t RX_Buffer[20];
-    int i = 0, num, sign = 0;
-    int16_t x = 0;
-    int16_t y = 0;
-    int16_t wide = 0;
-    int16_t height = 0;
-
-    char* f = (char*)&x;
-    char* h = (char*)&y;
-    char* u = (char*)&wide;
-    char* q = (char*)&height;
-    biu_int_16 color_date;
     for (;;)
     {
         if (usb_vbc_Receive(RX_Buffer, 22, HAL_MAX_DELAY))
         {
-            vTaskSuspendAll();
 
-            for (i = 0; i < 8; i++)
-            {
-                if (RX_Buffer[i] == 0X2C && RX_Buffer[i + 10] == 0X5B)
-                {
-                    num = i;
-                    if (RX_Buffer[num + 1] == 0X12)
-                        sign = 1; // 当前获取到的数据是物块颜色
-                    else if (RX_Buffer[num + 1] == 0X21)
-                        sign = 2; // 当前获取到的数据是二维码值
-                    else if (RX_Buffer[num + 1] == 0X3C)
-                        sign = 3; // 当前获取到的数据是色环定位数据
-                    else
-                        sign = 0;
-                    break;
-                }
-                sign = 0;
-            }
-            // HAL_UART_Transmit_DMA(&huart1, RX_Buffer, 22);
-            if (sign == 1) // 识别物块颜色
-            {
-
-                for (i = 0; i < 2; i++)
-                {
-                    *(f + i) = *(RX_Buffer + num + i + 2);
-                }
-                //          i=*(f);*(f)=*(f+1);*(f+1)=i;
-
-                for (i = 0; i < 2; i++)
-                {
-                    *(h + i) = *(RX_Buffer + num + i + 4);
-                }
-                for (i = 0; i < 2; i++)
-                {
-                    *(u + i) = *(RX_Buffer + num + i + 6);
-                }
-                for (i = 0; i < 2; i++)
-                {
-                    *(q + i) = *(RX_Buffer + num + i + 8);
-                }
-                //          i=*(h);*(h)=*(h+1);*(h+1)=i;
-                if ((x != 520 && y != 520) && (y != 9))
-                {
-                    color_date.date[0] = x;
-                    color_date.date[1] = y;
-                    color_date.date[2] = 11;
-                    color_date.date[3] = height;
-                    xQueueSend(color_Queue, &color_date, 0);
-                }
-                else
-                {
-                    // error
-                }
-            }
-            else if (sign == 2) // 获取二维码值
-            {
-                RX_Buffer[num + 6] = RX_Buffer[num + 7];
-                RX_Buffer[num + 7] = RX_Buffer[num + 8];
-                RX_Buffer[num + 8] = RX_Buffer[num + 9];
-                x = 0;
-                for (i = 0; i < 6; i++)
-                {
-                    if (RX_Buffer[num + 3 + i] == '1')
-                        x |= 0X01 << (5 - i) * 2;
-                    else if (RX_Buffer[num + 3 + i] == '2')
-                        x |= 0X02 << (5 - i) * 2;
-                    else if (RX_Buffer[num + 3 + i] == '3')
-                        x |= 0X03 << (5 - i) * 2;
-                    else
-                    {
-                        x = 0;
-                        break;
-                    }
-                }
-                if (x != 0)
-                {
-                    if ((x & 3 << 0) != ((x & 3 << 2) >> 2) && (x & 3 << 0) != ((x & 3 << 4) >> 4) && (x & 3 << 2) >> 2 != ((x & 3 << 4) >> 4))
-                    {
-
-                        color_date.date[3] = x;
-                        color_date.date[2] = 22;
-                        xQueueSend(color_Queue, &color_date, 0);
-                        // printf("%d\n", x);
-                    }
-                    else
-                    {
-                        // error
-                    }
-                }
-            }
-            else if (sign == 3) // 色环定位数据
-            {
-
-                for (i = 0; i < 2; i++)
-                {
-                    *(f + i) = *(RX_Buffer + num + i + 2);
-                }
-                //          i=*(f);*(f)=*(f+1);*(f+1)=i;
-
-                for (i = 0; i < 2; i++)
-                {
-                    *(h + i) = *(RX_Buffer + num + i + 4);
-                }
-                for (i = 0; i < 2; i++)
-                {
-                    *(u + i) = *(RX_Buffer + num + i + 6);
-                }
-                for (i = 0; i < 2; i++)
-                {
-                    *(q + i) = *(RX_Buffer + num + i + 8);
-                }
-                //          i=*(h);*(h)=*(h+1);*(h+1)=i;
-                if ((x != 520 && y != 520) && (y != 9))
-                {
-                    color_date.date[0] = x;
-                    color_date.date[1] = y;
-                    color_date.date[2] = 33;
-                    color_date.date[3] = 0;
-                    xQueueSend(color_Queue, &color_date, 0);
-                }
-                else
-                {
-                    // error
-                }
-            }
-
-            xTaskResumeAll();
         }
         osDelay(10);
     }
@@ -946,10 +809,10 @@ void oled_Task(void const* argument)
     for (;;)
     {
         adc_vlaue = (float)ADC_value * 3.3f * 11 / 4096.0f;
-        if (adc_vlaue < 11.4f)
-            GPIOD->ODR |= GPIO_PIN_7;
-        else
-            GPIOD->ODR &= ~GPIO_PIN_7;
+        // if (adc_vlaue < 11.4f)
+        //     GPIOD->ODR |= GPIO_PIN_7;
+        // else
+        //     GPIOD->ODR &= ~GPIO_PIN_7;
         osDelay(1000);
     }
     /* USER CODE END oled_Task */
@@ -978,19 +841,15 @@ void servo_Task(void const* argument)
         else
             time = servo.time;
 
-        FSUS_SetServoAngle(servoUsart, 1, servo.value_goal[0], time, 0, 0);
+        FSUS_SetServoAngle(servoUsart, 1, servo.value_goal[0], time, 3000, 0);
         osDelay(10);
-        FSUS_SetServoAngle(servoUsart, 2, servo.value_goal[1], time, 0, 0);
+        FSUS_SetServoAngle(servoUsart, 2, servo.value_goal[1], time, 3000, 0);
         osDelay(10);
-        FSUS_SetServoAngle(servoUsart, 3, servo.value_goal[2], time, 0, 0);
+        FSUS_SetServoAngle(servoUsart, 3, servo.value_goal[2], time, 3000, 0);
         osDelay(10);
-        FSUS_SetServoAngle(servoUsart, 4, servo.value_goal[3], time, 0, 0);
+        FSUS_SetServoAngle(servoUsart, 4, servo.value_goal[3], time, 3000, 0);
         osDelay(10);
 
-        if (time > 300)
-            osDelay(time - 300);
-        else
-            osDelay(10);
         xSemaphoreGive(Servo_Sem_Handle);
 
         osDelay(10);
@@ -1040,7 +899,7 @@ void speed_Task(void const* argument)
         xTaskResumeAll();
         xQueueSend(Speed_Queue, &speed, 0); /* 等待时间 0 */
         xQueueSend(distance_Queue, &distance, 0);
-        osDelay(10);
+        osDelay(5);
 
     }
     /* USER CODE END speed_Task */
@@ -1067,10 +926,10 @@ void pid_Task(void const* argument)
     {
         xQueueReceive(Speed_Queue, /* 消息队列的句柄 */
             &speed_now,  /* 发送的消息内容 */
-            5);          /* 等待时间 */
+            0);          /* 等待时间 */
         xQueueReceive(goal_Queue,  /* 消息队列的句柄 */
             &speed_goal, /* 发送的消息内容 */
-            5);          /* 等待时间 */
+            0);          /* 等待时间 */
 
         taskENTER_CRITICAL();
 
@@ -1100,10 +959,10 @@ void doing_Task(void const* argument)
     static biu distance_now; // 距离记录结构体
     biu_int_16 color_date;
 
-    float angle_standard = 0.0f, Direction_KP = 0.2f, Direction_KI = 0.01f;
-    static int back_sign = 0, color_speed_use = 0, color_speed_sum1 = 0, color_speed_sum2 = 0, color_speed_dert = 0;
-    static int16_t distance_use = 0, color_circle_x = 0, color_circle_y = 0;
-
+    float angle_standard = 0.0f, Visual_coord_angle = 0;
+    static int back_sign = 0;
+    static int16_t distance_use = 0, color_circle_x = 0, color_circle_y = 0, Visual_coord[2];
+    uint16_t Visual_coord_distance = 0;
     static uint8_t Task_select = Start,
         color_sign = 0,    // 0表示当前正在从原料区拿取第一个物料，1表示当前正在从原料区拿取第二个物料，2表示当前正在从原料区拿取第三个物料,3表示拿取已经结束
         use_num = 0;        // 执行调度参数
@@ -1123,7 +982,9 @@ void doing_Task(void const* argument)
         color_location_sign = 0,//色环定位标志位
         angle_num = 0,
         start_status = 0,
-        distance_sign = 0;
+        distance_sign = 0,
+        position_status = 0,
+        Visual_num = 0;
 
     Uart5_LCD_send_task(0);           // LCD屏幕显示当前任务为开始
     vTaskSuspend(myTask_debugHandle); // 挂起调试任务
@@ -1131,6 +992,9 @@ void doing_Task(void const* argument)
     UNUSED_VARIABLE(distance_use);
     Task_verify = Task_select = Start; // 设置当前任务为开始
     speed_CTRL(0, 0, 0, 0);            // 速度归零
+    FSUS_SetServoAngle(servoUsart, 6, servo_motion[0].value_goal[4], 1000, 0, 0);
+    osDelay(10);
+    servo_all_move(servo_motion[0]);
 
     for (;;)
     {
@@ -1155,11 +1019,9 @@ void doing_Task(void const* argument)
             if (color_date.date[2] == 33)
             {
                 use_num++;
-                if (use_num > 5)
-                {
-                    Uart5_LCD_show_X_Y(color_date.date[0], color_date.date[1]);
-                    use_num = 0;
-                }
+                color_date.date[0] = -color_date.date[0];
+                color_date.date[1] = -color_date.date[1];
+                Uart5_LCD_show_X_Y(color_date.date[0], color_date.date[1]);
             }
         }
 
@@ -1204,7 +1066,7 @@ void doing_Task(void const* argument)
         case Start:// 开始向左走
             if (distance_sign == 1)
             {
-                if (crosswise_angle_distance(angle_standard, imu_date, distance_now, -200) == 1)
+                if (crosswise_angle_distance(angle_standard, imu_date, distance_now, -205) == 1)
                 {
                     speed_CTRL(0, 0, 0, 0);
                     Task_select = Task_verify = To_QR_Code; // 跳转任务
@@ -1279,7 +1141,7 @@ void doing_Task(void const* argument)
             }
             break;
         case To_RMA:                                                                      // 前进到达原料区
-            if (Directional_move_distance(angle_standard, imu_date, distance_now, 755, 88) == 1) // 前进 845 mm  , 当原料区距离修改时，第一转角距离也需要修改
+            if (Directional_move_distance(angle_standard, imu_date, distance_now, 750, 88) == 1) // 前进 845 mm  , 当原料区距离修改时，第一转角距离也需要修改
             {
                 speed_CTRL(0, 0, 0, 0);
                 vTaskSuspendAll();
@@ -1400,7 +1262,7 @@ void doing_Task(void const* argument)
                 switch (color_sign_now)
                 {
                 case 1: // 识别到的红色物料放置
-                    FSUS_SetServoAngle(servoUsart, 6, 105.5, 1000, 0, 0);
+                    FSUS_SetServoAngle(servoUsart, 6, 105, 1000, 0, 0);
                     break;
                 case 2: // 识别到的绿色物料放置
                     FSUS_SetServoAngle(servoUsart, 6, -25.5, 1000, 0, 0);
@@ -1452,7 +1314,10 @@ void doing_Task(void const* argument)
             if (advance_angle_distance(angle_standard, imu_date, distance_now, 450) == 1) // 向前前往转向1
             {
                 Uart5_LCD_show_string("To_Put_down_1");
+                vTaskSuspendAll();
                 Task_select = Task_verify = To_Put_down_1;
+                xTaskResumeAll();
+
             }
             break;
         case To_Put_down_1:                                                                  // 左行达到粗加工区
@@ -1511,321 +1376,106 @@ void doing_Task(void const* argument)
                 Arm_do_order = color_sign = servo_sign = 0;
                 if (Do_thing_status == 1)
                     color_sign = 3;
-                // Task_select = At_Put_down_1_2;
-                // Task_verify = At_Put_down_1_2;
+                Task_select = At_Put_down_1_angle;
+                Task_verify = At_Put_down_1_angle;
                 xTaskResumeAll();
             }
             break;
         }
-
+        case At_Put_down_1_angle:
+            if (direction_Set(angle_standard, imu_date) == 1)
+            {
+                speed_CTRL(0, 0, 0, 0);
+                vTaskSuspendAll();
+                Visual_coord[0] = color_circle_x - color_date.date[0];
+                Visual_coord[1] = color_circle_y - color_date.date[1];
+                Camera_die();
+                Task_select = At_Put_down_1_2;
+                Task_verify = At_Put_down_1_2;
+                xTaskResumeAll();
+            }
+                break;
         case At_Put_down_1_2: // 在粗加工区 放置物料,色环
             switch (Arm_do_order)
             {
             case 0:
-                if (servo_sign == 1)
+                switch (color[color_sign])
                 {
-                    servo_sign = 0;
-                    Arm_do_order++;
+                case 1: // 识别到的红色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, 105, 1000, 0, 0);
+                    break;
+                case 2: // 识别到的绿色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, -25.5, 1000, 0, 0);
+                    break;
+                case 3: // 识别到的蓝色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, -145.5, 1000, 0, 0);
+                    break;
                 }
-                else
-                {
-                    if (color_sign == 3)
-                    {
-                        if (Do_thing_status == 0)
-                            Arm_do_order = 250;
-                        else
-                        {
-                            servo_time_use = servo_motion[0];
-                            servo_time_use.time = 200;
-                            servo_all_move(servo_time_use);
-                            osDelay(servo_time_use.time + 70);
-                        }
-                    }
-                    else
-                    {
-                        if (color_sign == 6)
-                            Arm_do_order = 250;
-                        else
-                        {
-                            servo_time_use = servo_motion[0];
-                            servo_time_use.time = 200;
-                            servo_all_move(servo_time_use);
-                            osDelay(servo_time_use.time + 70);
-                        }
-                    }
-                }
+                osDelay(10);
+                servo_all_move(servo_motion[12]);
+                osDelay(servo_motion[12].time + 70);
+                servo_all_move(servo_motion[13]);
+                osDelay(servo_motion[13].time + 70);
+                servo_all_move(servo_motion[14]);
+                osDelay(servo_motion[14].time + 70);
+                servo_all_move(servo_motion[15]);
+                osDelay(servo_motion[15].time + 70);
+                servo_all_move(servo_motion[16]);
+                osDelay(servo_motion[16].time + 70);
+                Arm_do_order++;
                 break;
             case 1:
                 switch (color[color_sign])
                 {
                 case 1: // 红色
-                    Arm_do_order = 11;
-                    color_sign++;
-                    break;
-                case 2: // 绿色
-                    Arm_do_order = 33;
-                    color_sign++;
-                    break;
-                case 3: // 蓝色
-                    Arm_do_order = 22;
-                    color_sign++;
-                    break;
-                }
-                break;
-            case 11:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_time_use = servo_motion[11];
-                    servo_time_use.time = 800;
-                    servo_all_move(servo_time_use);
-                    osDelay(servo_time_use.time + 70);
-                }
-                break;
-            case 12:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[10]);
-                    osDelay(servo_motion[10].time + 70);
-                }
-                break;
-            case 13:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[9]);
-                    osDelay(servo_motion[9].time + 70);
-                }
-                break;
-            case 14:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[8]);
-                    osDelay(servo_motion[8].time + 70);
-                }
-                break;
-            case 15:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-
-                    servo_all_move(servo_motion[47]);
-                    osDelay(servo_motion[47].time + 70);
-                    servo_all_move(servo_motion[20]);
-                    osDelay(servo_motion[20].time + 70);
-                }
-                break;
-            case 16:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
                     Arm_do_order = 0;
-                }
-                else
-                {
-
-                    servo_all_move(servo_motion[42]);
-                    osDelay(servo_motion[42].time + 200);
-
-                    servo_all_move(servo_motion[23]);
-                    osDelay(servo_motion[23].time + 70);
-                }
-                break;
-            case 22:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_time_use = servo_motion[15];
-                    servo_time_use.time = 800;
+                    color_sign++;
+                    servo_time_use = servo_change(Visual_coord[0], Visual_coord[1], servo_motion[20]);
                     servo_all_move(servo_time_use);
                     osDelay(servo_time_use.time + 70);
-                }
-                break;
-            case 23:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[14]);
-                    osDelay(servo_motion[14].time + 70);
-                }
-                break;
-            case 24:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[13]);
-                    osDelay(servo_motion[13].time + 70);
-                }
-                break;
-            case 25:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[12]);
-                    osDelay(servo_motion[12].time + 70);
-                }
-                break;
-            case 26:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-
-                    servo_all_move(servo_motion[48]);
-                    osDelay(servo_motion[48].time + 70);
-                    servo_all_move(servo_motion[22]);
-                    osDelay(servo_motion[22].time + 70);
-                }
-                break;
-            case 27:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order = 0;
-                }
-                else
-                {
-
-                    servo_all_move(servo_motion[44]);
-                    osDelay(servo_motion[44].time + 200);
-                    servo_all_move(servo_motion[25]);
-                    osDelay(servo_motion[25].time + 70);
-                }
-                break;
-            case 33:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_time_use = servo_motion[19];
-                    servo_time_use.time = 800;
-                    servo_all_move(servo_time_use);
-                    osDelay(servo_time_use.time + 70);
-                }
-                break;
-            case 34:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[18]);
-                    osDelay(servo_motion[18].time + 70);
-                }
-                break;
-            case 35:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[17]);
-                    osDelay(servo_motion[17].time + 70);
-                }
-                break;
-            case 36:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[16]);
-                    osDelay(servo_motion[16].time + 70);
-                }
-                break;
-            case 37:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-
-                    servo_all_move(servo_motion[47]);
-                    osDelay(servo_motion[47].time + 70);
                     servo_all_move(servo_motion[21]);
                     osDelay(servo_motion[21].time + 70);
-                }
-                break;
+                    servo_all_move(servo_motion[22]);
+                    osDelay(servo_motion[22].time + 70);
 
-            case 38:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
+                    servo_all_move(servo_motion[26]);
+                    osDelay(servo_motion[26].time + 70);
+                    break;
+                case 2: // 绿色
                     Arm_do_order = 0;
-                }
-                else
-                {
+                    color_sign++;
+                    servo_time_use = servo_change(Visual_coord[0], Visual_coord[1], servo_motion[17]);
+                    servo_all_move(servo_time_use);
+                    osDelay(servo_time_use.time + 70);
+                    servo_all_move(servo_motion[18]);
+                    osDelay(servo_motion[18].time + 70);
+                    servo_all_move(servo_motion[19]);
+                    osDelay(servo_motion[19].time + 70);
 
-                    servo_all_move(servo_motion[43]);
-                    osDelay(servo_motion[43].time + 200);
+                    servo_all_move(servo_motion[26]);
+                    osDelay(servo_motion[26].time + 70);
+                    break;
+                case 3: // 蓝色
+                    Arm_do_order = 0;
+                    color_sign++;
+                    servo_time_use = servo_change(Visual_coord[0], Visual_coord[1], servo_motion[23]);
+                    servo_all_move(servo_time_use);
+                    osDelay(servo_time_use.time + 70);
                     servo_all_move(servo_motion[24]);
                     osDelay(servo_motion[24].time + 70);
-                }
-                break;
+                    servo_all_move(servo_motion[25]);
+                    osDelay(servo_motion[25].time + 70);
 
+                    servo_all_move(servo_motion[26]);
+                    osDelay(servo_motion[26].time + 70);
+                    break;
+                }
+                if (color_sign >= 3)
+                    Arm_do_order = 234;
+                break;
             default:
-                servo_time_use = servo_motion[0];
-                servo_time_use.time = 200;
-                servo_all_move(servo_time_use);
-                osDelay(servo_time_use.time + 70);
                 Task_select = Task_verify = At_Put_down_1_3;
                 Arm_do_order = color_sign = servo_sign = 0;
-                if (Do_thing_status == 1)
-                {
-                    color_sign = 3;
-                }
                 break;
             }
             break;
@@ -1833,313 +1483,106 @@ void doing_Task(void const* argument)
             switch (Arm_do_order)
             {
             case 0:
-                if (servo_sign == 1)
+                switch (color[color_sign])
                 {
-                    servo_sign = 0;
-                    Arm_do_order++;
+                case 1: // 红色
+                    servo_all_move(servo_motion[22]);
+                    osDelay(servo_motion[22].time + 70);
+                    servo_all_move(servo_motion[21]);
+                    osDelay(servo_motion[21].time + 70);
+
+
+                    servo_time_use = servo_motion[20];
+                    servo_time_use.time = 300;
+                    servo_all_move(servo_time_use);
+                    osDelay(servo_time_use.time);
+
+                    break;
+                case 2: // 绿色
+                    servo_all_move(servo_motion[19]);
+                    osDelay(servo_motion[19].time + 70);
+                    servo_all_move(servo_motion[18]);
+                    osDelay(servo_motion[18].time + 70);
+
+                    servo_time_use = servo_motion[17];
+                    servo_time_use.time = 300;
+                    servo_all_move(servo_time_use);
+                    osDelay(servo_time_use.time);
+
+                    break;
+                case 3: // 蓝色
+                    servo_all_move(servo_motion[25]);
+                    osDelay(servo_motion[25].time + 70);
+                    servo_all_move(servo_motion[24]);
+                    osDelay(servo_motion[24].time + 70);
+
+                    servo_time_use = servo_motion[23];
+                    servo_time_use.time = 300;
+                    servo_all_move(servo_time_use);
+                    osDelay(servo_time_use.time);
+
+                    break;
                 }
-                else
-                {
-                    if (color_sign == 3)
-                    {
-                        if (Do_thing_status == 0)
-                            Arm_do_order = 250;
-                        else
-                        {
-                            servo_time_use = servo_motion[0];
-                            servo_time_use.time = 200;
-                            servo_all_move(servo_time_use);
-                            osDelay(servo_time_use.time + 70);
-                        }
-                    }
-                    else
-                    {
-                        if (color_sign == 6)
-                            Arm_do_order = 250;
-                        else
-                        {
-                            servo_time_use = servo_motion[0];
-                            servo_time_use.time = 200;
-                            servo_all_move(servo_time_use);
-                            osDelay(servo_time_use.time + 70);
-                        }
-                    }
-                }
+                Arm_do_order++;
                 break;
             case 1:
                 switch (color[color_sign])
                 {
-                case 1:                // 红色
-                    Arm_do_order = 11; // 动作执行顺序：23 20 8 9 10 11
-                    color_sign++;
-
+                case 1: // 识别到的红色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, 105, 1000, 0, 0);
                     break;
-                case 2:                // 绿色
-                    Arm_do_order = 33; // 动作执行顺序:25 22 12 13 14 15
-                    color_sign++;
-
+                case 2: // 识别到的绿色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, -25.5, 1000, 0, 0);
                     break;
-                case 3:                // 蓝色
-                    Arm_do_order = 22; // 动作执行顺序：24 21 16 17 18 19
-                    color_sign++;
-
+                case 3: // 识别到的蓝色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, -145.5, 1000, 0, 0);
                     break;
                 }
+                osDelay(10);
+                servo_all_move(servo_motion[16]);
+                osDelay(servo_motion[16].time + 70);
+                Arm_do_order++;
+                color_sign++;
                 break;
-            case 11:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[23]);
-                    osDelay(servo_motion[23].time + 70);
-                    servo_all_move(servo_motion[27]);
-                    osDelay(servo_motion[27].time + 70);
-                    printf("拿起蓝色\n");
-                }
-                break;
-            case 12:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[36]);
-                    osDelay(servo_motion[36].time + 70);
-                }
-                break;
-            case 13:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_time_use = servo_motion[8];
-                    servo_time_use.time = 1000;
-                    servo_all_move(servo_time_use);
-                    osDelay(servo_time_use.time + 70);
-                }
-                break;
-            case 14:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[9]);
-                    osDelay(servo_motion[9].time + 70);
-                }
-                break;
-            case 15:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[10]);
-                    osDelay(servo_motion[10].time + 70);
-                }
-                break;
-            case 16:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order = 0;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[11]);
-                    osDelay(servo_motion[11].time + 70);
-                }
-                break;
-            case 22:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[25]);
-                    osDelay(servo_motion[25].time + 70);
-                    servo_all_move(servo_motion[46]);
-                    osDelay(servo_motion[46].time + 70);
-                    //                    printf("拿起蓝色\n");
-                }
-                break;
-            case 23:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[38]);//合爪收回动作
-                    osDelay(servo_motion[38].time + 70);
-                }
-                break;
-            case 24:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_time_use = servo_motion[12];
-                    servo_time_use.time = 1000;
-                    servo_all_move(servo_time_use);
-                    osDelay(servo_time_use.time + 70);
-                }
-                break;
-            case 25:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[13]);
-                    osDelay(servo_motion[13].time + 70);
-                }
-                break;
-            case 26:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[14]);
-                    osDelay(servo_motion[14].time + 70);
-                }
-                break;
-            case 27:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order = 0;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[15]);
-                    osDelay(servo_motion[15].time + 70);
-                }
-                break;
-            case 33:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[24]);
-                    osDelay(servo_motion[24].time + 70);
-                    servo_all_move(servo_motion[28]);
-                    osDelay(servo_motion[28].time + 70);
-                }
-                break;
-            case 34:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[37]);
-                    osDelay(servo_motion[37].time + 70);
-                }
-                break;
-            case 35:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_time_use = servo_motion[16];
-                    servo_time_use.time = 1000;
-                    servo_all_move(servo_time_use);
-                    osDelay(servo_time_use.time + 70);
-                }
-                break;
-            case 36:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[17]);
-                    osDelay(servo_motion[17].time + 70);
-                }
-                break;
-            case 37:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[18]);
-                    osDelay(servo_motion[18].time + 70);
-                }
-                break;
-            case 38:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order = 0;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[19]);
-                    osDelay(servo_motion[19].time + 70);
-                }
-                break;
+            case 2:
+                servo_all_move(servo_motion[6]);
+                osDelay(servo_motion[6].time + 70);
+                servo_all_move(servo_motion[7]);
+                osDelay(servo_motion[7].time + 70);
+                servo_all_move(servo_motion[8]);
+                osDelay(servo_motion[8].time + 70);
+                servo_all_move(servo_motion[9]);
+                osDelay(servo_motion[9].time + 70);
+                servo_all_move(servo_motion[10]);
+                osDelay(servo_motion[10].time + 70);
 
+                if (color_sign >= 3)
+                {
+                    Arm_do_order = 234;
+                }
+                else
+                {
+                    Arm_do_order = 0;
+                    servo_all_move(servo_motion[26]);
+                    osDelay(servo_motion[26].time + 70);
+                }
+                break;
             default:
-                servo_time_use = servo_motion[0];
-                servo_time_use.time = 200;
-                servo_all_move(servo_time_use);
-                osDelay(servo_time_use.time + 70);
                 Task_select = Task_verify = To_Turn_2;
+                osDelay(1000);
                 break;
             }
             break;
-        case To_Turn_2:                                                                      // 左行前往暂存区
-            if (crosswise_angle_distance(angle_standard, imu_date, distance_now, -511) == 1) //
+        case To_Turn_2:// 左行前往暂存区
+            if (crosswise_angle_distance(angle_standard, imu_date, distance_now, -680) == 1) //
             {
                 vTaskSuspendAll();
-                if (Do_thing_status == 1)
-                {
-                    Task_select = Task_verify = At_Turn_2_angle;
-                }
-                else
-                    Task_select = Task_verify = At_Turn_2;
+                Task_select = Task_verify = At_Turn_2;
+                servo_all_move(servo_motion[2]);
                 xTaskResumeAll();
             }
             break;
-        case At_Turn_2_angle: // 在粗加工区进行方向调整
+        case At_Turn_2_angle://暂存区和粗加工区拐角角度矫正
             if (direction_Set(angle_standard, imu_date) == 1)
             {
                 speed_CTRL(0, 0, 0, 0);
@@ -2150,30 +1593,16 @@ void doing_Task(void const* argument)
             }
 
             break;
-        case At_Turn_2:                                                                    // 直线前进到达暂存区
-            if (advance_angle_distance(angle_standard, imu_date, distance_now, -605) == 1) //
+        case At_Turn_2:// 直线前进到达暂存区
+            if (advance_angle_distance(angle_standard, imu_date, distance_now, -735) == 1) //
             {
                 vTaskSuspendAll();
                 angle_standard = 90.2f;
-                Task_select = Task_verify = To_Put_down_2;
+                Task_select = Task_verify = To_Put_down_3;
                 xTaskResumeAll();
             }
             break;
-        case To_Put_down_2: // 在暂存区调整车身角度 
-            if (direction_Set_biu(angle_standard, imu_date) == 1)
-            {
-                speed_CTRL(0, 0, 0, 0);
-                osDelay(100);
-                vTaskSuspendAll();
-                Task_select = To_Put_down_3;
-                Task_verify = To_Put_down_3;
-                color_location_sign = 0;
-                color_date.date[2] = 0;
-                Camera_date_status = 0;
-                xTaskResumeAll();
-                xQueueReceive(angle_Queue, &imu_date, portMAX_DELAY);
-            }
-            break;
+
         case To_Put_down_3: // 在暂存区调整车身角度 
             if (direction_Set(angle_standard, imu_date) == 1)
             {
@@ -2181,20 +1610,13 @@ void doing_Task(void const* argument)
                 osDelay(100);
 
                 vTaskSuspendAll();
-
+                servo_all_move(servo_motion[1]);
                 Task_select = At_Put_down_2_0;
                 Task_verify = At_Put_down_2_0;
                 color_location_sign = 0;
                 Arm_do_order = color_sign = servo_sign = 0;
                 color_date.date[2] = 0;
                 Camera_date_status = 0;
-                if (Do_thing_status == 1)
-                {
-                    Arm_do_order = color_sign = servo_sign = 0;
-                    color_sign = 3;
-                    Task_select = Stacking;
-                    Task_verify = Stacking;
-                }
                 xTaskResumeAll();
 
             }
@@ -2204,8 +1626,6 @@ void doing_Task(void const* argument)
             if (color_location_sign == 0)
             {
                 Camera_color_circle_location();
-                servo_all_move(servo_motion[45]);
-                osDelay(servo_motion[45].time + 100);
                 vTaskSuspendAll();
                 back_sign = At_Put_down_2_0;
                 if (Camera_date_status == 1 && color_date.date[2] == 33)
@@ -2228,309 +1648,108 @@ void doing_Task(void const* argument)
                 vTaskSuspendAll();
                 color_location_sign = 0;
 
-                if (Do_thing_status == 1)
-                {
-                    color_sign = 3;
-                    Task_select = Stacking;
-                    Task_verify = Stacking;
-                }
-                else
-                {
-                    Arm_do_order = color_sign = servo_sign = 0;
-                    Task_select = At_Put_down_2_1;
-                    Task_verify = At_Put_down_2_1;
-                }
+                Arm_do_order = color_sign = servo_sign = 0;
+                Task_select = At_Put_down_2_1;
+                Task_verify = At_Put_down_2_1;
+
                 xTaskResumeAll();
             }
             break;
         }
 
-        case At_Put_down_2_1: //暂存区放置
+        case At_Put_down_2_1: //暂存区放置物料
             switch (Arm_do_order)
             {
             case 0:
-                if (servo_sign == 1)
+                switch (color[color_sign])
                 {
-                    servo_sign = 0;
-                    Arm_do_order++;
+                case 1: // 识别到的红色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, 105, 1000, 0, 0);
+                    break;
+                case 2: // 识别到的绿色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, -25.5, 1000, 0, 0);
+                    break;
+                case 3: // 识别到的蓝色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, -145.5, 1000, 0, 0);
+                    break;
                 }
-                else
-                {
-                    if (color_sign == 3)
-                    {
-                        Arm_do_order = 250;
-                    }
-                    else
-                    {
-                        servo_time_use = servo_motion[0];
-                        servo_time_use.time = 800;
-                        servo_all_move(servo_time_use);
-                        osDelay(servo_time_use.time + 70);
-                    }
-                }
+                osDelay(10);
+                servo_all_move(servo_motion[12]);
+                osDelay(servo_motion[12].time + 70);
+                servo_all_move(servo_motion[13]);
+                osDelay(servo_motion[13].time + 70);
+                servo_all_move(servo_motion[14]);
+                osDelay(servo_motion[14].time + 70);
+                servo_all_move(servo_motion[15]);
+                osDelay(servo_motion[15].time + 70);
+                servo_all_move(servo_motion[16]);
+                osDelay(servo_motion[16].time + 70);
+                Arm_do_order++;
                 break;
             case 1:
                 switch (color[color_sign])
                 {
                 case 1: // 红色
-                    Arm_do_order = 11;
+                    Arm_do_order = 0;
                     color_sign++;
-                    break;
-                case 2: // 绿色
-                    Arm_do_order = 33;
-                    color_sign++;
-                    break;
-                case 3: // 蓝色
-                    Arm_do_order = 22;
-                    color_sign++;
-                    break;
-                }
-                break;
-            case 11:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[11]);
-                    osDelay(servo_motion[11].time + 70);
-                }
-                break;
-            case 12:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[10]);
-                    osDelay(servo_motion[10].time + 70);
-                }
-                break;
-            case 13:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[9]);
-                    osDelay(servo_motion[9].time + 70);
-                }
-                break;
-            case 14:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[8]);
-                    osDelay(servo_motion[8].time + 70);
-                }
-                break;
-            case 15:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-
-                    servo_all_move(servo_motion[47]);
-                    osDelay(servo_motion[47].time + 70);
                     servo_all_move(servo_motion[20]);
                     osDelay(servo_motion[20].time + 70);
-                }
-                break;
-            case 16:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order = 0;
-                }
-                else
-                {
-
-                    servo_all_move(servo_motion[42]);
-                    osDelay(servo_motion[42].time + 70);
-                    servo_all_move(servo_motion[23]);
-                    osDelay(servo_motion[23].time + 70);
-                }
-                break;
-            case 22:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[15]);
-                    osDelay(servo_motion[15].time + 70);
-                }
-                break;
-            case 23:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[14]);
-                    osDelay(servo_motion[14].time + 70);
-                }
-                break;
-            case 24:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[13]);
-                    osDelay(servo_motion[13].time + 70);
-                }
-                break;
-            case 25:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[12]);
-                    osDelay(servo_motion[12].time + 70);
-                }
-                break;
-            case 26:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-
-
-                    servo_all_move(servo_motion[48]);
-                    osDelay(servo_motion[48].time + 70);
-                    servo_all_move(servo_motion[22]);
-                    osDelay(servo_motion[22].time + 70);
-                }
-                break;
-            case 27:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order = 0;
-                }
-                else
-                {
-
-                    servo_all_move(servo_motion[44]);
-                    osDelay(servo_motion[44].time + 70);
-                    servo_all_move(servo_motion[25]);
-                    osDelay(servo_motion[25].time + 70);
-                }
-                break;
-            case 33:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[19]);
-                    osDelay(servo_motion[19].time + 70);
-                }
-                break;
-            case 34:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[18]);
-                    osDelay(servo_motion[18].time + 70);
-                }
-                break;
-            case 35:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[17]);
-                    osDelay(servo_motion[17].time + 70);
-                }
-                break;
-            case 36:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[16]);
-                    osDelay(servo_motion[16].time + 70);
-                }
-                break;
-            case 37:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-
-                    servo_all_move(servo_motion[47]);
-                    osDelay(servo_motion[47].time + 70);
                     servo_all_move(servo_motion[21]);
                     osDelay(servo_motion[21].time + 70);
-                }
-                break;
-            case 38:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order = 0;
-                }
-                else
-                {
+                    servo_all_move(servo_motion[22]);
+                    osDelay(servo_motion[22].time + 70);
 
-                    servo_all_move(servo_motion[43]);
-                    osDelay(servo_motion[43].time + 70);
+                    servo_all_move(servo_motion[26]);
+                    osDelay(servo_motion[26].time + 70);
+                    break;
+                case 2: // 绿色
+                    Arm_do_order = 0;
+                    color_sign++;
+                    servo_all_move(servo_motion[17]);
+                    osDelay(servo_motion[17].time + 70);
+                    servo_all_move(servo_motion[18]);
+                    osDelay(servo_motion[18].time + 70);
+                    servo_all_move(servo_motion[19]);
+                    osDelay(servo_motion[19].time + 70);
+
+                    servo_all_move(servo_motion[26]);
+                    osDelay(servo_motion[26].time + 70);
+                    break;
+                case 3: // 蓝色
+                    Arm_do_order = 0;
+                    color_sign++;
+                    servo_all_move(servo_motion[23]);
+                    osDelay(servo_motion[23].time + 70);
                     servo_all_move(servo_motion[24]);
                     osDelay(servo_motion[24].time + 70);
+                    servo_all_move(servo_motion[25]);
+                    osDelay(servo_motion[25].time + 70);
+
+                    servo_all_move(servo_motion[26]);
+                    osDelay(servo_motion[26].time + 70);
+                    break;
                 }
+                if (color_sign >= 3)
+                    Arm_do_order = 234;
                 break;
 
             default:
-                servo_time_use = servo_motion[0];
-                servo_time_use.time = 200;
-                servo_all_move(servo_time_use);
-                osDelay(servo_time_use.time + 70);
-                Task_select = Task_verify = AT_Put_down_2_2;
-                angle_standard = 0.0;
+
+                servo_all_move(servo_motion[2]);
+                Task_select = Task_verify = Adjust_position;
+
                 Arm_do_order = servo_sign = 0;
                 break;
+            }
+            break;
+        case Adjust_position:
+            if (advance_angle_distance(angle_standard, imu_date, distance_now, 25) == 1) //
+            {
+
+                vTaskSuspendAll();
+                angle_standard = 0.0;
+                Task_select = Task_verify = AT_Put_down_2_3;
+                xTaskResumeAll();
             }
             break;
         case AT_Put_down_2_2:
@@ -2556,17 +1775,29 @@ void doing_Task(void const* argument)
                 xTaskResumeAll();
             }
             break;
-        case Back_Take_thing_1:                             //前进离开暂存区
-            if (advance_angle_distance(angle_standard, imu_date, distance_now, 640) == 1) //
+
+        case Back_Take_thing_1: //前进离开暂存区
+            if (advance_angle_distance(angle_standard, imu_date, distance_now, 800) == 1) //
             {
 
                 vTaskSuspendAll();
-                Task_select = Task_verify = Back_Take_thing_2;
+                Task_select = Task_verify = To_Put_down_2;
                 xTaskResumeAll();
             }
             break;
-        case Back_Take_thing_2:                            //右行前往原料区
-            if (crosswise_angle_distance(angle_standard, imu_date, distance_now, 1134) == 1) //
+        case To_Put_down_2: // 在暂存区调整车身角度 
+            if (direction_Set(angle_standard, imu_date) == 1)
+            {
+                speed_CTRL(0, 0, 0, 0);
+                osDelay(200);
+                vTaskSuspendAll();
+                Task_select = Back_Take_thing_2;
+                Task_verify = Back_Take_thing_2;
+                xTaskResumeAll();
+            }
+            break;
+        case Back_Take_thing_2: //右行前往原料区
+            if (crosswise_angle_distance(angle_standard, imu_date, distance_now, 1500) == 1) //
             {
 
                 vTaskSuspendAll();
@@ -2575,13 +1806,15 @@ void doing_Task(void const* argument)
             }
             break;
 
-        case Back_Take_thing_3:                            //向后走一段
-            if (advance_angle_distance(angle_standard, imu_date, distance_now, -190) == 1) //
+        case Back_Take_thing_3:   //向后走一段
+            if (advance_angle_distance(angle_standard, imu_date, distance_now, -430) == 1) //
             {
 
                 vTaskSuspendAll();
                 Do_thing_status = 1;
+                servo_all_move(servo_motion[3]);
                 Task_select = Task_verify = Angle_direction_3;
+                Uart5_LCD_show_string("Angle_direction_3");
                 xTaskResumeAll();
             }
             break;
@@ -2591,8 +1824,10 @@ void doing_Task(void const* argument)
             {
                 speed_CTRL(0, 0, 0, 0);
                 vTaskSuspendAll();
-                Do_thing_status = 1;
                 color_first_find = 0;
+                Camera_Color_Find_do(); // 开始扫描物块颜色
+                servo_all_move(servo_motion[3]);
+                Uart5_LCD_show_string("Take_color_thing_2");
                 Task_select = Take_color_thing_2;
                 Task_verify = Take_color_thing_2;
                 xTaskResumeAll();
@@ -2600,65 +1835,69 @@ void doing_Task(void const* argument)
             break;
 
         case Take_color_thing_2: // 第二次去原料区拿取物料
-        {
-            switch (Arm_do_order)
+            if (Camera_date_status == 0) // 判断有无摄像头信息
             {
-            case 0:
-                if (servo_sign == 1)
+                osDelay(200);
+                Camera_Color_Find_do(); // 开始扫描物块颜色
+            }
+            else
+            {
+                if (color_date.date[2] == 11) // 校验
                 {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_time_use = servo_motion[0];
-                    servo_time_use.time = 200;
-                    servo_all_move(servo_time_use);
-                    osDelay(servo_time_use.time + 70);
-                    servo_all_move(servo_motion[3]);
-                    osDelay(servo_motion[3].time + 100);
-                }
-                break;
-            case 1: // 抓取第一步
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    if (color_sign == 6)
+
+                    if (color[0] == color_date.date[1] && color_first_find == 0)
                     {
-                        Arm_do_order = 250;
+                        osDelay(200);
                     }
                     else
                     {
-                        servo_all_move(servo_motion[26]);
-                        osDelay(servo_motion[26].time + 70);
-                        xQueueReceive(color_Queue, &color_date, 10);
-                        Camera_date_status = 0;
-                        color_date.date[1] = 0;
+                        speed_CTRL(0, 0, 0, 0);
+                        vTaskSuspendAll();
+                        Task_select = Task_verify = Take_color_thing_2_1; // 任务跳转
+                        Uart5_LCD_show_string("Taking");
+                        servo_sign = 0;
+                        Arm_do_order = 2;
+                        color_sign = 3;
+                        xTaskResumeAll();
                     }
+                }
+                else // 校验不通过
+                {
+                    Camera_die();
+                    Camera_date_status = 0;
+                    osDelay(200);
+                }
+            }
+            break;
+        case Take_color_thing_2_1:
+            switch (Arm_do_order) // 机械臂动作执行标志位
+            {
+            case 0:
+                servo_all_move(servo_motion[3]);
+                osDelay(servo_motion[3].time + 70);
+                Arm_do_order++;
+                break;
+            case 1: // 抓取第一步
+                if (color_sign == 6)
+                {
+                    Arm_do_order = 250; // 进入结束动作组
+                }
+                else
+                {
+                    xQueueReceive(color_Queue, &color_date, 10);
+                    Camera_date_status = 0;
+                    color_date.date[1] = 0;
+                    Arm_do_order++;
                 }
                 break;
             case 2:
                 if (Camera_date_status == 1)
                 {
-                    if (color[color_sign] == color_date.date[1] && color_sign == 3 && color_first_find == 0)
-                    {
-                        osDelay(100);
-                        Camera_date_status = 0;
-                        break;
-                    }
-                    else
-                    {
-                        color_first_find = 1;
-                    }
                     if (color[color_sign] == color_date.date[1])
                     {
                         if (color_check > 4)
                         {
-
+                            // 若连续900微秒扫描到的都是这个颜色，则执行下面的代码
                             color_sign++;
                             Arm_do_order++;
                             color_sign_now = color_date.date[1];
@@ -2666,518 +1905,472 @@ void doing_Task(void const* argument)
                         }
                         else
                         {
-
+                            //                        printf("%d,%d\n", color[color_sign], color_date.date[1]);
                             color_date.date[1] = 0;
                             color_check++;
-                            osDelay(150);
+                            osDelay(100);
                         }
                     }
                     else
                     {
                         color_check = 0;
-                        osDelay(150);
+                        osDelay(100);
+                        //                    printf("%d,%d\n", color[color_sign], color_date.date[1]);
                     }
-                    printf("%d,%d\n", color[color_sign], color_date.date[1]);
                     Camera_date_status = 0;
-
-                }
-                else
-                {
-                    Camera_Color_Find_do();
-                    osDelay(200);
                 }
                 break;
             case 3: // 抓取第二步
-                if (servo_sign == 1)
+                Arm_do_order++;
+                servo_sign = 0;
+                switch (color_sign_now)
                 {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[3]);
-                    osDelay(servo_motion[3].time + 70);
-                    servo_all_move(servo_motion[4]);
-                    osDelay(servo_motion[4].time + 70);
-                    servo_all_move(servo_motion[5]);
-                    osDelay(servo_motion[5].time + 70);
+                case 1: // 识别到的红色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, 105, 1000, 0, 0);
+                    break;
+                case 2: // 识别到的绿色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, -25.5, 1000, 0, 0);
+                    break;
+                case 3: // 识别到的蓝色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, -145.5, 1000, 0, 0);
+                    break;
                 }
                 break;
             case 4: // 抓取第三步
                 if (servo_sign == 1)
                 {
                     servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[6]);
-                    osDelay(servo_motion[6].time + 70);
-                }
-                break;
-            case 5: // 抓取第四步
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[7]);
-                    osDelay(servo_motion[7].time + 70);
-                }
-                break;
-            case 6:
-                switch (color_sign_now)
-                {
-                case 1: // 识别到的红色物料放置
-                    Arm_do_order = 11;
-                    break;
-                case 2: // // 识别到的绿色物料放置
-                    Arm_do_order = 33;
-                    break;
-                case 3: // 识别到的蓝色物料放置
-                    Arm_do_order = 22;
-                    break;
-                }
-                break;
-            case 11:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[8]);
-                    osDelay(servo_motion[8].time + 70);
-                }
-                break;
-            case 12:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[9]);
-                    osDelay(servo_motion[9].time + 70);
-                }
-                break;
-            case 13:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[10]);
-                    osDelay(servo_motion[10].time + 70);
-                }
-                break;
-            case 14:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
                     Arm_do_order = 0;
                 }
                 else
                 {
                     servo_all_move(servo_motion[11]);
                     osDelay(servo_motion[11].time + 70);
-                }
-                break;
-            case 22:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[12]);
-                    osDelay(servo_motion[12].time + 70);
-                }
-                break;
-            case 23:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[13]);
-                    osDelay(servo_motion[13].time + 70);
-                }
-                break;
-            case 24:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[14]);
-                    osDelay(servo_motion[14].time + 70);
-                }
-                break;
-            case 25:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order = 0;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[15]);
-                    osDelay(servo_motion[15].time + 70);
-                }
-                break;
-            case 33:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[16]);
-                    osDelay(servo_motion[16].time + 70);
-                }
-                break;
-            case 34:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[17]);
-                    osDelay(servo_motion[17].time + 70);
-                }
-                break;
-            case 35:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[18]);
-                    osDelay(servo_motion[18].time + 70);
-                }
-                break;
-            case 36:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order = 0;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[19]);
-                    osDelay(servo_motion[19].time + 70);
+                    servo_all_move(servo_motion[4]);
+                    osDelay(servo_motion[4].time + 70);
+                    servo_all_move(servo_motion[5]);
+                    osDelay(servo_motion[5].time + 70);
+                    servo_all_move(servo_motion[6]);
+                    osDelay(servo_motion[6].time + 70);
+                    servo_all_move(servo_motion[7]);
+                    osDelay(servo_motion[7].time + 70);
+                    servo_all_move(servo_motion[8]);
+                    osDelay(servo_motion[8].time + 70);
+                    servo_all_move(servo_motion[9]);
+                    osDelay(servo_motion[9].time + 70);
+                    servo_all_move(servo_motion[10]);
+                    osDelay(servo_motion[10].time + 70);
                 }
                 break;
 
             default:
-                Do_thing_status = 1;
-                Task_select = Task_verify = To_Turn_1;
+                Task_select = Task_verify = S_To_Turn_1;
+                Camera_die();
+                servo_all_move(servo_motion[2]);
+                Uart5_LCD_show_string("To_Turn_1");
                 break;
             }
-        }
-        break;
-        case Stacking: // 码垛
-            switch (Arm_do_order)
+            break;
+        case S_To_Turn_1: // 直线前进
+            Uart5_LCD_show_string("To_Turn_1");
+            if (advance_angle_distance(angle_standard, imu_date, distance_now, 450) == 1) // 向前前往转向1
             {
-            case 0:
-                if (servo_sign == 1)
+                Uart5_LCD_show_string("To_Put_down_1");
+                Task_select = Task_verify = S_To_Put_down_1;
+            }
+            break;
+        case S_To_Put_down_1:                                                                  // 左行达到粗加工区
+            if (crosswise_angle_distance(angle_standard, imu_date, distance_now, -900) == 1) // 放下1
+            {
+
+                vTaskSuspendAll();
+                Task_select = Task_verify = S_Angle_direction_2;
+                servo_all_move(servo_motion[1]);
+                xTaskResumeAll();
+            }
+            break;
+        case S_Angle_direction_2: // 在粗加工区进行方向调整
+            if (direction_Set(angle_standard, imu_date) == 1)
+            {
+                speed_CTRL(0, 0, 0, 0);
+                vTaskSuspendAll();
+                Task_select = S_At_Put_down_1_1;
+                Task_verify = S_At_Put_down_1_1;
+                servo_all_move(servo_motion[1]);
+                color_location_sign = 0;
+                Arm_do_order = color_sign = servo_sign = 0;
+                if (Do_thing_status == 1)
+                    color_sign = 3;
+
+                xTaskResumeAll();
+            }
+            break;
+
+        case S_At_Put_down_1_1: // 粗加工区视觉定位
+        {
+            if (color_location_sign == 0)
+            {
+                Camera_color_circle_location();
+                vTaskSuspendAll();
+                back_sign = S_At_Put_down_1_1;
+                if (Camera_date_status == 1 && color_date.date[2] == 33)
                 {
-                    servo_sign = 0;
-                    Arm_do_order++;
+                    color_circle_x = color_circle_x_RM;
+                    color_circle_y = color_circle_y_RM;
+                    Task_select = Color_cicle_location;
+                    Task_verify = Color_cicle_location;
+                    back_sign = S_At_Put_down_1_1;
                 }
                 else
                 {
-                    if (color_sign == 3)
-                    {
-                        if (Do_thing_status == 0)
-                            Arm_do_order = 250;
-                        else
-                        {
-                            servo_time_use = servo_motion[0];
-                            servo_time_use.time = 800;
-                            servo_all_move(servo_time_use);
-                            osDelay(servo_time_use.time + 70);
-                        }
-                    }
-                    else
-                    {
-                        if (color_sign == 6)
-                            Arm_do_order = 250;
-                        else
-                        {
-                            servo_time_use = servo_motion[0];
-                            servo_time_use.time = 800;
-                            servo_all_move(servo_time_use);
-                            osDelay(servo_time_use.time + 70);
-                        }
-                    }
+                    Camera_color_circle_location();
                 }
+
+                xTaskResumeAll();
+            }
+            else
+            {
+                vTaskSuspendAll();
+                color_location_sign = 0;
+                Arm_do_order = servo_sign = 0;
+                color_sign = 3;
+                Task_select = S_At_Put_down_1_2;
+                Task_verify = S_At_Put_down_1_2;
+                xTaskResumeAll();
+            }
+            break;
+        }
+
+        case S_At_Put_down_1_2: // 在粗加工区 放置物料,色环
+            switch (Arm_do_order)
+            {
+            case 0:
+                switch (color[color_sign])
+                {
+                case 1: // 识别到的红色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, 105, 1000, 0, 0);
+                    break;
+                case 2: // 识别到的绿色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, -25.5, 1000, 0, 0);
+                    break;
+                case 3: // 识别到的蓝色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, -145.5, 1000, 0, 0);
+                    break;
+                }
+                osDelay(10);
+                servo_all_move(servo_motion[12]);
+                osDelay(servo_motion[12].time + 70);
+                servo_all_move(servo_motion[13]);
+                osDelay(servo_motion[13].time + 70);
+                servo_all_move(servo_motion[14]);
+                osDelay(servo_motion[14].time + 70);
+                servo_all_move(servo_motion[15]);
+                osDelay(servo_motion[15].time + 70);
+                servo_all_move(servo_motion[16]);
+                osDelay(servo_motion[16].time + 70);
+                Arm_do_order++;
                 break;
             case 1:
                 switch (color[color_sign])
                 {
                 case 1: // 红色
-                    Arm_do_order = 11;
+                    Arm_do_order = 0;
                     color_sign++;
+
+                    servo_all_move(servo_motion[20]);
+                    osDelay(servo_motion[20].time + 70);
+                    servo_all_move(servo_motion[21]);
+                    osDelay(servo_motion[21].time + 70);
+                    servo_all_move(servo_motion[22]);
+                    osDelay(servo_motion[22].time + 70);
+
+                    servo_all_move(servo_motion[26]);
+                    osDelay(servo_motion[26].time + 70);
                     break;
                 case 2: // 绿色
-                    Arm_do_order = 33;
-                    color_sign++;
-                    break;
-                case 3: // 蓝色
-                    Arm_do_order = 22;
-                    color_sign++;
-                    break;
-                }
-                break;
-            case 11:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[11]);
-                    osDelay(servo_motion[11].time + 70);
-                }
-                break;
-            case 12:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[10]);
-                    osDelay(servo_motion[10].time + 70);
-                }
-                break;
-            case 13:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[9]);
-                    osDelay(servo_motion[9].time + 70);
-                }
-                break;
-            case 14:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[8]);
-                    osDelay(servo_motion[8].time + 70);
-                }
-                break;
-            case 15:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[30]);
-                    osDelay(servo_motion[30].time + 70);
-                }
-                break;
-            case 16:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
                     Arm_do_order = 0;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[39]);
-                    osDelay(servo_motion[39].time + 70);
-
-                    servo_all_move(servo_motion[33]);
-                    osDelay(servo_motion[33].time + 70);
-                }
-                break;
-            case 22:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[15]);
-                    osDelay(servo_motion[15].time + 70);
-                }
-                break;
-            case 23:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[14]);
-                    osDelay(servo_motion[14].time + 70);
-                }
-                break;
-            case 24:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[13]);
-                    osDelay(servo_motion[13].time + 70);
-                }
-                break;
-            case 25:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[12]);
-                    osDelay(servo_motion[12].time + 70);
-                }
-                break;
-            case 26:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[32]);
-                    osDelay(servo_motion[32].time + 70);
-                }
-                break;
-            case 27:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order = 0;
-                }
-                else
-                {
-
-                    servo_all_move(servo_motion[41]);
-                    osDelay(servo_motion[41].time + 70);
-
-                    servo_all_move(servo_motion[35]);
-                    osDelay(servo_motion[35].time + 70);
-                }
-                break;
-            case 33:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[19]);
-                    osDelay(servo_motion[19].time + 70);
-                }
-                break;
-            case 34:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[18]);
-                    osDelay(servo_motion[18].time + 70);
-                }
-                break;
-            case 35:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
-                    Arm_do_order++;
-                }
-                else
-                {
+                    color_sign++;
                     servo_all_move(servo_motion[17]);
                     osDelay(servo_motion[17].time + 70);
+                    servo_all_move(servo_motion[18]);
+                    osDelay(servo_motion[18].time + 70);
+                    servo_all_move(servo_motion[19]);
+                    osDelay(servo_motion[19].time + 70);
+
+                    servo_all_move(servo_motion[26]);
+                    osDelay(servo_motion[26].time + 70);
+                    break;
+                case 3: // 蓝色
+                    Arm_do_order = 0;
+                    color_sign++;
+                    servo_all_move(servo_motion[23]);
+                    osDelay(servo_motion[23].time + 70);
+                    servo_all_move(servo_motion[24]);
+                    osDelay(servo_motion[24].time + 70);
+                    servo_all_move(servo_motion[25]);
+                    osDelay(servo_motion[25].time + 70);
+
+                    servo_all_move(servo_motion[26]);
+                    osDelay(servo_motion[26].time + 70);
+                    break;
                 }
+                if (color_sign >= 6)
+                    Arm_do_order = 234;
                 break;
-            case 36:
-                if (servo_sign == 1)
+            default:
+                Task_select = Task_verify = S_At_Put_down_1_3;
+                Arm_do_order = servo_sign = 0;
+                color_sign = 3;
+                break;
+            }
+            break;
+        case S_At_Put_down_1_3: // 在粗加工区把放下的物料拿起来
+            switch (Arm_do_order)
+            {
+            case 0:
+                switch (color[color_sign])
                 {
-                    servo_sign = 0;
-                    Arm_do_order++;
+                case 1: // 红色
+                    servo_all_move(servo_motion[22]);
+                    osDelay(servo_motion[22].time + 70);
+                    servo_all_move(servo_motion[21]);
+                    osDelay(servo_motion[21].time + 70);
+
+
+                    servo_time_use = servo_motion[20];
+                    servo_time_use.time = 300;
+                    servo_all_move(servo_time_use);
+                    osDelay(servo_time_use.time);
+
+                    break;
+                case 2: // 绿色
+                    servo_all_move(servo_motion[19]);
+                    osDelay(servo_motion[19].time + 70);
+                    servo_all_move(servo_motion[18]);
+                    osDelay(servo_motion[18].time + 70);
+
+                    servo_time_use = servo_motion[17];
+                    servo_time_use.time = 300;
+                    servo_all_move(servo_time_use);
+                    osDelay(servo_time_use.time);
+
+                    break;
+                case 3: // 蓝色
+                    servo_all_move(servo_motion[25]);
+                    osDelay(servo_motion[25].time + 70);
+                    servo_all_move(servo_motion[24]);
+                    osDelay(servo_motion[24].time + 70);
+
+                    servo_time_use = servo_motion[23];
+                    servo_time_use.time = 300;
+                    servo_all_move(servo_time_use);
+                    osDelay(servo_time_use.time);
+
+                    break;
+                }
+                Arm_do_order++;
+                break;
+            case 1:
+                switch (color[color_sign])
+                {
+                case 1: // 识别到的红色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, 105, 1000, 0, 0);
+                    break;
+                case 2: // 识别到的绿色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, -25.5, 1000, 0, 0);
+                    break;
+                case 3: // 识别到的蓝色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, -145.5, 1000, 0, 0);
+                    break;
+                }
+                osDelay(10);
+                servo_all_move(servo_motion[16]);
+                osDelay(servo_motion[16].time + 70);
+                Arm_do_order++;
+                color_sign++;
+                break;
+            case 2:
+                servo_all_move(servo_motion[6]);
+                osDelay(servo_motion[6].time + 70);
+                servo_all_move(servo_motion[7]);
+                osDelay(servo_motion[7].time + 70);
+                servo_all_move(servo_motion[8]);
+                osDelay(servo_motion[8].time + 70);
+                servo_all_move(servo_motion[9]);
+                osDelay(servo_motion[9].time + 70);
+                servo_all_move(servo_motion[10]);
+                osDelay(servo_motion[10].time + 70);
+
+                if (color_sign >= 6)
+                {
+                    Arm_do_order = 234;
                 }
                 else
                 {
-                    servo_all_move(servo_motion[16]);
-                    osDelay(servo_motion[16].time + 70);
+                    Arm_do_order = 0;
+                    servo_all_move(servo_motion[26]);
+                    osDelay(servo_motion[26].time + 70);
                 }
                 break;
-            case 37:
-                if (servo_sign == 1)
+            default:
+                Task_select = Task_verify = S_To_Turn_2;
+                osDelay(1000);
+                break;
+            }
+            break;
+        case S_To_Turn_2:                                                                      // 左行前往暂存区
+            if (crosswise_angle_distance(angle_standard, imu_date, distance_now, -680) == 1) //
+            {
+                vTaskSuspendAll();
+                Task_select = Task_verify = S_At_Turn_2;
+                servo_all_move(servo_motion[2]);
+                xTaskResumeAll();
+            }
+            break;
+        case S_At_Turn_2_angle:
+            if (direction_Set(angle_standard, imu_date) == 1)
+            {
+                speed_CTRL(0, 0, 0, 0);
+                vTaskSuspendAll();
+                Task_select = S_At_Turn_2;
+                Task_verify = S_At_Turn_2;
+                servo_all_move(servo_motion[2]);
+                xTaskResumeAll();
+            }
+
+            break;
+        case S_At_Turn_2:                                                                    // 直线前进到达暂存区
+            if (advance_angle_distance(angle_standard, imu_date, distance_now, -735) == 1) //
+            {
+                vTaskSuspendAll();
+                angle_standard = 90.2f;
+                Task_select = Task_verify = S_To_Put_down_3;
+                servo_all_move(servo_motion[1]);
+                xTaskResumeAll();
+            }
+            break;
+        case S_To_Put_down_2: // 在暂存区调整车身角度 
+            if (direction_Set_biu(angle_standard, imu_date) == 1)
+            {
+                speed_CTRL(0, 0, 0, 0);
+                osDelay(100);
+                vTaskSuspendAll();
+                Task_select = S_To_Put_down_3;
+                Task_verify = S_To_Put_down_3;
+                color_location_sign = 0;
+                color_date.date[2] = 0;
+                Camera_date_status = 0;
+                xTaskResumeAll();
+                xQueueReceive(angle_Queue, &imu_date, portMAX_DELAY);
+            }
+            break;
+        case S_To_Put_down_3: // 在暂存区调整车身角度 
+            if (direction_Set(angle_standard, imu_date) == 1)
+            {
+                speed_CTRL(0, 0, 0, 0);
+                osDelay(100);
+                vTaskSuspendAll();
+                Task_select = Stacking;
+                Task_verify = Stacking;
+                color_location_sign = 0;
+                Arm_do_order = servo_sign = 0;
+                color_sign = 3;
+                color_date.date[2] = 0;
+                Camera_date_status = 0;
+                xTaskResumeAll();
+
+            }
+            break;
+        case Stacking: // 码垛
+            switch (Arm_do_order)
+            {
+            case 0:
+                switch (color[color_sign])
                 {
-                    servo_sign = 0;
-                    Arm_do_order++;
+                case 1: // 识别到的红色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, 100.5, 1000, 0, 0);
+                    break;
+                case 2: // 识别到的绿色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, -25.5, 1000, 0, 0);
+                    break;
+                case 3: // 识别到的蓝色物料放置
+                    FSUS_SetServoAngle(servoUsart, 6, -145.5, 1000, 0, 0);
+                    break;
                 }
-                else
+                osDelay(10);
+                servo_all_move(servo_motion[12]);
+                osDelay(servo_motion[12].time + 70);
+                servo_all_move(servo_motion[13]);
+                osDelay(servo_motion[13].time + 70);
+                servo_all_move(servo_motion[14]);
+                osDelay(servo_motion[14].time + 70);
+                servo_all_move(servo_motion[15]);
+                osDelay(servo_motion[15].time + 70);
+                servo_all_move(servo_motion[16]);
+                osDelay(servo_motion[16].time + 70);
+                Arm_do_order++;
+                break;
+            case 1:
+                switch (color[color_sign])
                 {
+                case 1: // 红色
+                    Arm_do_order = 0;
+                    color_sign++;
+
+                    servo_time_use = servo_motion[26];
+                    servo_time_use.value_goal[0] = servo_motion[27].value_goal[0];
+                    servo_time_use.value_goal[3] = servo_motion[27].value_goal[3];
+                    servo_time_use.time = 300;
+                    servo_all_move(servo_time_use);
+
+                    servo_all_move(servo_motion[27]);
+                    osDelay(servo_motion[27].time + 70);
+                    servo_all_move(servo_motion[28]);
+                    osDelay(servo_motion[28].time + 70);
+                    servo_all_move(servo_motion[29]);
+                    osDelay(servo_motion[29].time + 70);
+
+                    servo_all_move(servo_motion[26]);
+                    osDelay(servo_motion[26].time + 70);
+                    break;
+                case 2: // 绿色
+                    Arm_do_order = 0;
+                    color_sign++;
+                    servo_all_move(servo_motion[30]);
+                    osDelay(servo_motion[30].time + 70);
                     servo_all_move(servo_motion[31]);
                     osDelay(servo_motion[31].time + 70);
-                }
-                break;
-            case 38:
-                if (servo_sign == 1)
-                {
-                    servo_sign = 0;
+                    servo_all_move(servo_motion[32]);
+                    osDelay(servo_motion[32].time + 70);
+
+                    servo_all_move(servo_motion[26]);
+                    osDelay(servo_motion[26].time + 70);
+                    break;
+                case 3: // 蓝色
                     Arm_do_order = 0;
-                }
-                else
-                {
-                    servo_all_move(servo_motion[40]);
-                    osDelay(servo_motion[40].time + 70);
+                    color_sign++;
+                    servo_time_use = servo_motion[26];
+                    servo_time_use.value_goal[0] = servo_motion[33].value_goal[0];
+                    servo_time_use.value_goal[3] = servo_motion[33].value_goal[3];
+                    servo_time_use.time = 300;
+                    servo_all_move(servo_time_use);
+                    osDelay(servo_time_use.time + 70);
+                    servo_all_move(servo_motion[33]);
+                    osDelay(servo_motion[33].time + 70);
                     servo_all_move(servo_motion[34]);
                     osDelay(servo_motion[34].time + 70);
-                }
-                break;
+                    servo_all_move(servo_motion[35]);
+                    osDelay(servo_motion[35].time + 70);
 
+                    servo_all_move(servo_motion[26]);
+                    osDelay(servo_motion[26].time + 70);
+                    break;
+                }
+                if (color_sign >= 6)
+                    Arm_do_order = 234;
+                break;
             default:
-                servo_all_move(servo_motion[0]);
-                osDelay(servo_motion[0].time + 500);
                 Task_select = Task_verify = Back_home_1;
-                Arm_do_order = color_sign = servo_sign = 0;
                 break;
             }
             break;
@@ -3202,64 +2395,73 @@ void doing_Task(void const* argument)
             break;
 
         case Color_cicle_location:  // 判断颜色圈位置
-            if (Camera_date_status == 1)  // 如果相机数据状态为1
+            if (position_status == 0)
             {
-                if (abs(color_date.date[0] - color_circle_x) > 10)  // 如果颜色数据的第一个元素与颜色圈的x坐标的差的绝对值大于2
+                if (Camera_date_status == 1)  // 如果相机数据状态为1
                 {
-                    color_speed_dert = color_date.date[0] - color_circle_x;  // 颜色速度差等于颜色数据的第一个元素减去颜色圈的x坐标
-                    color_speed_dert = abs(color_speed_dert) > 20 ? color_speed_dert : color_speed_dert * 5;  // 如果颜色速度差的绝对值大于5，则颜色速度差不变，否则颜色速度差乘以5
-                    color_speed_sum2 += color_speed_dert;  // 颜色速度和等于颜色速度和加上颜色速度差
-                    color_speed_sum2 = color_speed_sum2 > 2000 ? 2000 : (color_speed_sum2 < -2000 ? -2000 : color_speed_sum2);  // 如果颜色速度和大于2000，则颜色速度和等于2000，否则如果颜色速度和小于-2000，则颜色速度和等于-2000，否则颜色速度和不变
-                    color_speed_use = color_speed_dert * Direction_KP + color_speed_sum2 * Direction_KI;  // 使用的颜色速度等于颜色速度差乘以方向KP加上颜色速度和乘以方向KI
-                    color_speed_use = color_speed_use > 500 ? 500 : (color_speed_use < -500 ? -500 : color_speed_use);  // 如果使用的颜色速度大于1000，则使用的颜色速度等于1000，否则如果使用的颜色速度小于-1000，则使用的颜色速度等于-1000，否则使用的颜色速度不变
-                    crosswise_angle(imu_date.IMU[2], imu_date, color_speed_use);  // 调用advance_angle函数，参数为imu_date的第三个元素，imu_date，使用的颜色速度
-                }
-                else if (abs(color_date.date[1] - color_circle_y) > 10)  // 否则，如果颜色数据的第二个元素与颜色圈的y坐标的差的绝对值大于2
-                {
-                    color_speed_sum2 = 0;  // 颜色速度和等于0
-                    color_speed_dert = color_date.date[1] - color_circle_y;  // 颜色速度差等于颜色圈的y坐标减去颜色数据的第二个元素
-                    color_speed_dert = abs(color_speed_dert) > 20 ? color_speed_dert : color_speed_dert * 5;  // 如果颜色速度差的绝对值大于5，则颜色速度差不变，否则颜色速度差乘以5
-                    color_speed_sum1 += color_speed_dert;  // 颜色速度和等于颜色速度和加上颜色速度差
-                    color_speed_sum1 = color_speed_sum1 > 2000 ? 2000 : (color_speed_sum1 < -2000 ? -2000 : color_speed_sum1);  // 如果颜色速度和大于2000，则颜色速度和等于2000，否则如果颜色速度和小于-2000，则颜色速度和等于-2000，否则颜色速度和不变
-                    color_speed_use = color_speed_dert * Direction_KP + color_speed_sum1 * Direction_KI;  // 使用的颜色速度等于颜色速度差乘以方向KP加上颜色速度和乘以方向KI
-                    color_speed_use = color_speed_use > 500 ? 500 : (color_speed_use < -500 ? -500 : color_speed_use);  // 如果使用的颜色速度大于1000，则使用的颜色速度等于1000，否则如果使用的颜色速度小于-1000，则使用的颜色速度等于-1000，否则使用的颜色速度不变
-                    advance_angle(imu_date.IMU[2], imu_date, color_speed_use);  // 调用crosswise_angle函数，参数为imu_date的第三个元素，imu_date，使用的颜色速度
-                }
-                else  // 否则
-                {
-                    speed_CTRL(0, 0, 0, 0);  // 调用speed_CTRL函数，参数都为0
-                    color_speed_sum1 = color_speed_sum2 = 0;  // 颜色速度和等于0
-                    osDelay(200);  // 延迟200毫秒
-                    if (target_location_sign < 6)  // 如果颜色圈位置标志小于6
+                    if (abs(color_date.date[0] - color_circle_x) < 10 && abs(color_date.date[1] - color_circle_y) < 10)
                     {
-                        target_location_sign++;  // 颜色圈位置标志加1
+                        speed_CTRL(0, 0, 0, 0);  // 调用speed_CTRL函数，参数都为0
+                        osDelay(200);  // 延迟200毫秒
+                        if (target_location_sign < 4)  // 如果颜色圈位置标志小于3
+                        {
+                            target_location_sign++;  // 颜色圈位置标志加1
+                        }
+                        else  // 否则
+                        {
+                            target_location_sign = 0;  // 颜色圈位置标志等于0
+                            Task_select = back_sign;  // 任务选择等于返回标志
+                            Task_verify = back_sign;  // 任务验证等于返回标志
+                            color_location_sign = 1;  // 颜色位置标志等于1
+                            Visual_num = 0;
+                            
+                        }
                     }
                     else  // 否则
                     {
-                        target_location_sign = 0;  // 颜色圈位置标志等于0
-                        Camera_die();  // 调用Camera_die函数
-                        Task_select = back_sign;  // 任务选择等于返回标志
-                        Task_verify = back_sign;  // 任务验证等于返回标志
-                        color_location_sign = 1;  // 颜色位置标志等于1
+
+                        Visual_coord[0] = color_circle_x - color_date.date[0];
+                        Visual_coord[1] = color_circle_y - color_date.date[1];
+                        if (Visual_num >= 10)
+                        {
+                            Visual_coord_angle = atan2(Visual_coord[1], Visual_coord[0]) / DEC;
+                            if (Visual_coord_angle < 0)
+                                Visual_coord_angle += 360.0f;
+                            Visual_coord_distance = sqrt(pow(Visual_coord[0], 2) + pow(Visual_coord[1], 2)) / 3.5;
+                            printf("%d,%f\n", Visual_coord_distance, Visual_coord_angle);
+                            Visual_num = 0;
+                            position_status = 1;
+                        }
+                        Visual_num++;
+                        osDelay(100);
                     }
+                    Camera_date_status = 0;  // 相机数据状态等于0
                 }
-                Camera_date_status = 0;  // 相机数据状态等于0
-            }
-            else  // 否则
-                osDelay(10);  // 延迟10毫秒
-            break;  // 跳出循环
-        case End:
-            if (distance_sign == 1)
-            {
-                if (Directional_move_distance(angle_standard, imu_date, distance_now, 1000, 110) == 1)
+                else  // 否则
                 {
                     speed_CTRL(0, 0, 0, 0);
-                    start_status = 0;
-                    vTaskResume(myTask_ledHandle); // LED闪烁任务启动
+                    osDelay(10);  // 延迟10毫秒
                 }
-                distance_sign = 0;
             }
-            //            vTaskSuspend(NULL);
+            else
+            {
+                if (Directional_move_distance(angle_standard, imu_date, distance_now, Visual_coord_distance, Visual_coord_angle) == 1)
+                {
+                    speed_CTRL(0, 0, 0, 0);
+                    position_status = 0;
+                    osDelay(200);
+                }
+            }
+            break;  // 跳出循环
+        case End:
+            // if (direction_Set_biu(angle_standard, imu_date) == 1)
+
+            if (Directional_move_distance(imu_date.IMU[2], imu_date, distance_now, 20, 75) == 1)
+            {
+                speed_CTRL(0, 0, 0, 0);
+                start_status = 0;
+                vTaskResume(myTask_ledHandle); // LED闪烁任务启动
+            }
             break;
         }
 

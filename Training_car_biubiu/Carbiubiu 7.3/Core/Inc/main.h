@@ -117,6 +117,26 @@ typedef enum
     To_Put_down_3,      // 43
     AT_Put_down_2_3,    // 44
     At_Turn_2_angle,    // 45
+    Take_color_thing_2_1,
+    S_To_Turn_1,          // 
+    S_At_Turn_1,          // 
+    S_To_Put_down_1,      // 
+    S_At_Put_down_1,      // 
+    S_At_Put_down_1_2,    // 
+    S_At_Put_down_1_3,    // 
+    S_To_Turn_2,          // 
+    S_At_Turn_2,          // 
+    S_To_Put_down_2,      // 
+    S_At_Put_down_2,      // 
+    S_At_Put_down_2_1,    // 
+    S_AT_Put_down_2_2,    // 
+    S_To_Put_down_3,
+    S_At_Turn_2_angle,
+    S_At_Put_down_1_1,
+    S_Angle_direction_2,
+    Adjust_position,
+    Small_moving,
+    At_Put_down_1_angle,
 } Location;
 /* USER CODE END ET */
 

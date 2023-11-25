@@ -20,11 +20,15 @@
 #define PWM5 TIM9->CCR2
 #define PWM6 TIM9->CCR1
 
+#define PI      3.14159265359f
+
+
 typedef struct
 {
    float value_goal[6];
    uint16_t time;
    int8_t sign;
+   float value_change[2];
 } servo_status;
 
 servo_status servo_date_deal(uint8_t *date);
@@ -35,5 +39,6 @@ void servo_level_move(int16_t num);
 void servo_vertical_move(servo_status Servo);
 void servo_all_move(servo_status Servo);
 uint16_t get_Servo_Time_Max(uint16_t arr[], uint16_t size);
-
+servo_status servo_change(int x_error, int y_error, servo_status Servo);
+servo_status servo_change_biu(int x_error, int y_error, servo_status Servo);
 #endif // !_SERVO_H_

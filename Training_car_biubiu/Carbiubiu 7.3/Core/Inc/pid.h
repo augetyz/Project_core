@@ -7,7 +7,10 @@
 #include "task.h"
 #include "cmsis_os.h"
 
-void pid_do(biu  speed_goal,biu  speed_now);
+#define pi 3.1415926535898
+#define DEC (pi/180)
+
+void pid_do(biu  speed_goal, biu  speed_now);
 void speed_CTRL(int speed1,int speed2,int speed3,int speed4);
 uint8_t direction_Set(float angle,imu imu_date);
 float dert(float a,float b);
